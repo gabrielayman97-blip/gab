@@ -1337,12 +1337,58 @@ function MainApp({user,onSignOut}){
   const confirmPerson=useMemo(()=>people.find(p=>p.id===confirmId),[people,confirmId]);
   const go=(v,id=null)=>{setView(v);if(id)setActiveId(id);};
   const back=()=>{setView('dashboard');setActiveId(null);};
-  const savePerson=p=>{setPeople(prev=>{const i=prev.findIndex(x=>x.id===p.id);return i>=0?prev.map(x=>x.id===p.id?p:x):[...prev,p];});setActiveId(p.id);setView('profile');};
-  const saveQuickRate=p=>{setPeople(prev=>[...prev,p]);setView('dashboard');};
-  const saveInteraction=(it,newR,newG)=>{setPeople(prev=>prev.map(p=>p.id!==activeId?p:{...p,interactions:[...(p.interactions||[]),it],red_flags:[...new Set([...(p.red_flags||[]),...newR])],green_flags:[...new Set([...(p.green_flags||[]),...newG])],updated:new Date().toISOString()}));setView('profile');};
-  const updatePatterns=pats=>{setPeople(prev=>prev.map(p=>p.id!==activeId?p:{...p,patterns:pats,updated:new Date().toISOString()}));};
-  const handleDelete=()=>{setPeople(prev=>prev.filter(p=>p.id!==confirmId));setConfirmId(null);setView('dashboard');setActiveId(null);};
-  const syncLabel=syncState==='syncing'?'Saving…':syncState==='synced'?'Saved':'';
+  ```javascript
+const savePerson=p=>{
+  setPeople(prev=>{
+    const i=prev.findIndex(x=>x.id===p.id);
+    return i>=0 ? prev.map(x=>x.id===p.id ? p : x) : [...prev, p];
+  });
+  setActiveId(p.id);
+  setView('profile');
+};
+
+const saveQuickRate=p=>{
+  setPeople(prev=>[...prev, p]);
+  setView('dashboard');
+};
+
+const saveInteraction=(it,newR,newG)=>{
+  setPeople(prev=>prev.map(p=>
+    p.id!==activeId
+      ? p
+      : {
+          ...p,
+          interactions:[...(p.interactions||[]), it],
+          red_flags:[...new Set([...(p.red_flags||[]), newR].filter(Boolean))],
+          green_flags:[...new Set([...(p.green_flags||[]), newG].filter(Boolean))],
+          updated:new Date().toISOString()
+        }
+  ));
+  setView('profile');
+};
+
+const updatePatterns=pats=>{
+  setPeople(prev=>prev.map(p=>
+    p.id!==activeId
+      ? p
+      : {
+          ...p,
+          patterns:pats,
+          updated:new Date().toISOString()
+        }
+  ));
+};
+
+const handleDelete=()=>{
+  setPeople(prev=>prev.filter(p=>p.id!==confirmId));
+  setConfirmId(null);
+  setView('dashboard');
+  setActiveId(null);
+};
+
+const syncLabel=syncState==='syncing'?'Saving...':syncState==='synced'?'Saved':'';
+```
+
   return(
     <div className="app">
       <div className="hdr">
@@ -1361,7 +1407,40 @@ function MainApp({user,onSignOut}){
       <div className="main">
         {!loaded&&<SplashScreen/>}
         {loaded&&view==='dashboard'&&<Dashboard people={people} onSelect={id=>go('profile',id)} onAdd={()=>go('add')}/>}
-        {loaded&&view==='profile'&&active&&<Profile person={active} onBack={back} onEdit={()=>setView('edit')} onLog={()=>setView('log')} onAskDelete={()=>setConfirmId(activeId)} onUpdatePatterns={updatePatterns} onSaveDefense={(correctedScore,situation,result)=>{setPeople(prev=>prev.map(p=>p.id!==activeId?p:{...p,scores:{...p.scores,...Object.fromEntries(Object.entries(result.category_scores||{}).map(([k,v])=>[k.replace('_and_','_').replace('respect_and_boundaries','respect'),v.score]))},defense_log:[...((p.defense_log||[])),{date:new Date().toISOString(),situation,initial_score:sc,corrected_score:correctedScore,result}],notes:p.notes?p.notes+'\n\n[Defense] '+situation:'[Defense] '+situation,updated:new Date().toISOString()}));}}/>}
+        {loaded&&view==='profile'&&active&&<Profile person={active} onBack={back} onEdit={()=>setView('edit')} onLog={()=>setView('log')} onAskDelete={()=>setConfirmId(activeId)} <Profile
+  person={active}
+  ...
+  onSaveDefense={(correctedScore,situation,result)=>{
+    setPeople(prev=>prev.map(p=>
+      p.id!==activeId
+        ? p
+        : {
+            ...p,
+            scores: {
+              ...p.scores,
+              ...Object.fromEntries(
+                Object.entries(result.category_scores || {}).map(([k, v]) => [
+                  k.replace('_and_', '_').replace('respect_and_boundaries', 'respect'),
+                  v.score
+                ])
+              )
+            },
+            defense_log: [
+              ...(p.defense_log || []),
+              {
+                date: new Date().toISOString(),
+                situation,
+                initial_score: sc,
+                corrected_score: correctedScore,
+                result
+              }
+            ],
+            notes: p.notes ? p.notes + '\n\n[Defense] ' + situation : '[Defense] ' + situation,
+            updated: new Date().toISOString()
+          }
+    ));
+  }}
+/>
         {loaded&&view==='add'&&<AddEdit initial={null} onSave={savePerson} onCancel={back}/>}
         {loaded&&view==='edit'&&active&&<AddEdit initial={active} onSave={savePerson} onCancel={()=>setView('profile')}/>}
         {loaded&&view==='log'&&active&&<LogInteraction person={active} onSave={saveInteraction} onCancel={()=>setView('profile')}/>}
