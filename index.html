@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Relationship Intelligence</title>
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#06060e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RelIntel">
+<meta name="description" content="Psychology-grade behavioral relationship evaluation system">
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- React + Babel -->
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#06060e;--surface:#0b0b18;--card:#0f0f1e;--card-hi:#141428;
+  --border:rgba(255,255,255,0.055);--border-hi:rgba(255,255,255,0.11);--border-gold:rgba(201,170,113,0.3);
+  --gold:#c9aa71;--gold-bg:rgba(201,170,113,0.09);--gold-hi:rgba(201,170,113,0.17);
+  --text:#ddddf0;--text2:#6a6a8a;--text3:#30304a;
+  --green:#4dbf72;--red:#e85555;--orange:#d97840;--blue:#2ecc9a;--purple:#9060e0;--cyan:#38b8d0;
+  --font:'Inter','Segoe UI',system-ui,sans-serif;--mono:'Space Mono','SF Mono',monospace;
+  --safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px);
+}
+html{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;min-height:100%;line-height:1.5;-webkit-font-smoothing:antialiased}
+.app{max-width:1120px;margin:0 auto;padding:0 1.25rem;min-height:100vh;display:flex;flex-direction:column;padding-top:var(--safe-top)}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 0 1rem;border-bottom:1px solid var(--border);flex-shrink:0}
+.logo{display:flex;align-items:center;gap:.75rem;cursor:pointer}
+.logobadge{width:34px;height:34px;border-radius:8px;background:var(--gold-bg);border:1px solid var(--border-gold);display:flex;align-items:center;justify-content:center}
+.logotitle{font-size:15px;font-weight:600;letter-spacing:.015em}
+.logosub{font-size:15px;color:var(--text2);text-transform:uppercase;letter-spacing:.09em;margin-top:1px}
+.main{flex:1;padding:1.5rem 0 2rem}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:.45rem .9rem;border-radius:7px;border:1px solid var(--border-hi);background:transparent;color:var(--text);font-family:var(--font);font-size:15px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--card-hi)}
+.btnp{background:var(--gold-bg);border-color:var(--border-gold);color:var(--gold)}
+.btnp:hover{background:var(--gold-hi)!important}
+.btnd{border-color:rgba(232,85,85,.3);color:var(--red)}
+.btnd:hover{background:rgba(232,85,85,.1)!important}
+.btnsm{padding:.3rem .65rem;font-size:16px}
+.people-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.9rem}
+.pcard{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:1.125rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.pcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);opacity:.75}
+.pcard:hover{background:var(--card-hi);border-color:var(--border-hi);transform:translateY(-1px)}
+.avatar{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;flex-shrink:0}
+.avatarlg{width:54px;height:54px;border-radius:13px;font-size:18px}
+.sbar-bg{height:3px;background:var(--border-hi);border-radius:2px;overflow:hidden;margin:.65rem 0 .7rem}
+.sbar-fill{height:100%;border-radius:2px;transition:width .5s}
+.dbadge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:4px;font-size:15px;font-weight:500;letter-spacing:.02em}
+.tbadge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:20px;font-size:15px;font-weight:500}
+.dim-row{display:flex;align-items:center;gap:.75rem;margin-bottom:.55rem}
+.dim-label{font-size:16px;color:var(--text2);width:160px;flex-shrink:0;line-height:1.3}
+.dim-bar-bg{flex:1;height:5px;background:var(--border-hi);border-radius:3px;overflow:hidden}
+.dim-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.dim-val{font-size:16px;font-family:var(--mono);color:var(--text2);width:16px;text-align:right}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem}
+.stat-label{font-size:15px;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem}
+.stat-val{font-size:20px;font-weight:600;font-family:var(--mono)}
+.sec-title{font-size:15px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.6rem;display:flex;align-items:center;gap:.5rem}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.fl{display:flex}.flc{flex-direction:column}.fli{align-items:center}.flb{justify-content:space-between}.flw{flex-wrap:wrap}
+.g4{gap:.25rem}.g6{gap:.375rem}.g8{gap:.5rem}.g10{gap:.625rem}.g12{gap:.75rem}.g16{gap:1rem}.g20{gap:1.25rem}
+.mb6{margin-bottom:.375rem}.mb8{margin-bottom:.5rem}.mb10{margin-bottom:.625rem}.mb12{margin-bottom:.75rem}.mb16{margin-bottom:1rem}.mb20{margin-bottom:1.25rem}
+.mt6{margin-top:.375rem}.mt8{margin-top:.5rem}.mt12{margin-top:.75rem}.mt16{margin-top:1rem}
+.pt8{padding-top:.5rem}.pt12{padding-top:.75rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem 1.125rem}
+.card-warn{background:rgba(201,170,113,.055);border:1px solid var(--border-gold);border-radius:8px;padding:.7rem 1rem}
+.card-danger{background:rgba(232,85,85,.055);border:1px solid rgba(232,85,85,.25);border-radius:8px;padding:.7rem 1rem}
+.fg{color:var(--gold)}.fd{color:var(--text2)}.fr{color:var(--red)}.fg2{color:var(--green)}.fo{color:var(--orange)}.fb{color:var(--blue)}.fp{color:var(--purple)}
+.fm{font-family:var(--mono)}.fsm{font-size:16px}.fxs{font-size:15px}.fw5{font-weight:500}.fw6{font-weight:600}
+.tag{display:inline-flex;align-items:center;padding:3px 8px;border-radius:4px;font-size:15px;cursor:pointer;border:1px solid;transition:all .15s;user-select:none}
+.tag-r{border-color:rgba(232,85,85,.2);color:rgba(232,85,85,.5)}.tag-r.on{background:rgba(232,85,85,.1);border-color:rgba(232,85,85,.45);color:var(--red)}
+.tag-g{border-color:rgba(77,191,114,.2);color:rgba(77,191,114,.5)}.tag-g.on{background:rgba(77,191,114,.1);border-color:rgba(77,191,114,.45);color:var(--green)}
+.tag-b{border-color:rgba(46,204,154,.2);color:rgba(46,204,154,.5)}.tag-b.on{background:rgba(46,204,154,.1);border-color:rgba(46,204,154,.45);color:var(--blue)}
+.tags-row{display:flex;flex-wrap:wrap;gap:5px}
+.ftab{padding:5px 13px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:var(--font);font-size:16px;cursor:pointer;transition:all .15s}
+.ftab.on{background:var(--gold-bg);border-color:var(--border-gold);color:var(--gold)}
+.ftab:hover:not(.on){background:var(--card-hi);color:var(--text)}
+.ptab{padding:7px 16px;border-radius:0;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text2);font-family:var(--font);font-size:15px;cursor:pointer;transition:all .15s}
+.ptab.on{border-bottom-color:var(--gold);color:var(--text)}
+.ptab:hover:not(.on){color:var(--text)}
+.tab-bar{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.5rem;overflow-x:auto}
+.fg-inp{width:100%;padding:.55rem .85rem;background:var(--card);border:1px solid var(--border-hi);border-radius:8px;color:var(--text);font-family:var(--font);font-size:16px;transition:border-color .15s}
+.fg-inp:focus{outline:none;border-color:var(--border-gold)}
+.fg-ta{width:100%;padding:.55rem .85rem;background:var(--card);border:1px solid var(--border-hi);border-radius:8px;color:var(--text);font-family:var(--font);font-size:16px;resize:vertical;min-height:85px;transition:border-color .15s}
+.fg-ta:focus{outline:none;border-color:var(--border-gold)}
+.fg-sel{width:100%;padding:.55rem .85rem;background:var(--card);border:1px solid var(--border-hi);border-radius:8px;color:var(--text);font-family:var(--font);font-size:16px;cursor:pointer}
+.fg-sel:focus{outline:none;border-color:var(--border-gold)}
+.fg-sel option{background:var(--surface)}
+.flabel{display:block;font-size:15px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.45rem}
+.fgroup{margin-bottom:1.1rem}
+input[type=range]{width:100%;height:3px;background:var(--border-hi);border-radius:2px;outline:none;cursor:pointer;-webkit-appearance:none;appearance:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--gold);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--gold);border:none;cursor:pointer}
+input[type=date]{color-scheme:dark}
+.cswatch{width:26px;height:26px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all .15s}.cswatch.on{border-color:#fff;transform:scale(1.1)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.it-item{padding:.8rem .9rem;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:.45rem}
+.scroll-box{max-height:360px;overflow-y:auto;padding-right:2px}
+.scroll-box::-webkit-scrollbar{width:3px}
+.scroll-box::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:2px}
+.breadcrumb{display:flex;align-items:center;gap:.5rem;margin-bottom:1.5rem}
+.blink{font-size:15px;color:var(--text2);cursor:pointer}.blink:hover{color:var(--text)}
+.bsep{font-size:15px;color:var(--text3)}.bcur{font-size:15px;color:var(--text)}
+.empty{text-align:center;padding:4rem 2rem}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:var(--surface);border:1px solid var(--border-hi);border-radius:14px;padding:1.5rem;width:90%;max-width:420px}
+.sel-btn{flex:1;padding:.5rem;border-radius:8px;font-family:var(--font);font-size:16px;cursor:pointer;transition:all .15s;font-weight:500;border:1px solid var(--border)}
+.form-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.125rem;margin-bottom:1rem}
+.ebar{height:8px;border-radius:4px;overflow:hidden;display:flex;margin:.5rem 0}
+.ebar-seg{height:100%;transition:width .5s}
+.pattern-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.4rem}
+/* AI Layer */
+.mode-toggle{display:flex;border:1px solid var(--border-hi);border-radius:8px;overflow:hidden;width:fit-content}
+.mode-btn{padding:.45rem 1.1rem;border:none;background:transparent;color:var(--text2);font-family:var(--font);font-size:16px;cursor:pointer;transition:all .15s;font-weight:500;white-space:nowrap}
+.mode-btn.on{background:var(--gold-bg);color:var(--gold)}.mode-btn.on-ai{background:rgba(144,96,224,.1);color:#9060e0}
+.mode-btn:hover:not(.on):not(.on-ai){background:var(--card-hi);color:var(--text)}
+.ai-badge{display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:3px;font-size:15px;font-weight:700;background:rgba(144,96,224,.12);border:1px solid rgba(144,96,224,.35);color:#9060e0;font-family:var(--mono);letter-spacing:.04em}
+.conf-badge{display:inline-flex;align-items:center;padding:1px 7px;border-radius:3px;font-size:15px;font-family:var(--mono);border:1px solid;font-weight:500}
+.conf-badge.hi{color:#4dbf72;border-color:rgba(77,191,114,.35);background:rgba(77,191,114,.08)}
+.conf-badge.med{color:#c9aa71;border-color:rgba(201,170,113,.35);background:rgba(201,170,113,.08)}
+.conf-badge.lo{color:#d97840;border-color:rgba(217,120,64,.35);background:rgba(217,120,64,.08)}
+.ai-thinking{display:flex;align-items:center;gap:.875rem;padding:1.1rem 1.25rem;background:rgba(144,96,224,.055);border:1px solid rgba(144,96,224,.22);border-radius:10px}
+.ai-dots{display:flex;gap:4px;align-items:center}
+.ai-dot{width:6px;height:6px;border-radius:50%;background:#9060e0}
+.ai-dot:nth-child(1){animation:aidot 1.2s ease-in-out infinite 0s}
+.ai-dot:nth-child(2){animation:aidot 1.2s ease-in-out infinite .2s}
+.ai-dot:nth-child(3){animation:aidot 1.2s ease-in-out infinite .4s}
+@keyframes aidot{0%,100%{opacity:.2;transform:scale(.7)}50%{opacity:1;transform:scale(1.2)}}
+.bias-warn{background:rgba(217,120,64,.07);border:1px solid rgba(217,120,64,.28);border-radius:8px;padding:.65rem .9rem;margin-bottom:.5rem}
+.signal-box{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:.8rem 1rem}
+.ai-score-row{margin-bottom:1.2rem}
+.ai-dim-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.4rem}
+.paste-counter{font-size:15px;color:var(--text2);margin-top:.4rem;display:flex;align-items:center;gap:.5rem}
+.paste-quality{padding:1px 7px;border-radius:3px;font-size:15px;font-family:var(--mono);border:1px solid}
+.paste-quality.weak{color:#d97840;border-color:rgba(217,120,64,.35);background:rgba(217,120,64,.07)}
+.paste-quality.ok{color:#c9aa71;border-color:rgba(201,170,113,.35);background:rgba(201,170,113,.07)}
+.paste-quality.strong{color:#4dbf72;border-color:rgba(77,191,114,.35);background:rgba(77,191,114,.07)}
+/* Image upload */
+.img-upload-box{border:2px dashed var(--border-hi);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.img-upload-box:hover{border-color:rgba(144,96,224,.5);background:rgba(144,96,224,.04)}
+.img-upload-box.has-img{border-color:rgba(77,191,114,.4);background:rgba(77,191,114,.04)}
+.img-preview{max-width:100%;max-height:220px;border-radius:8px;object-fit:contain;display:block;margin:0 auto}
+.input-tabs{display:flex;border:1px solid var(--border-hi);border-radius:10px;overflow:hidden;margin-bottom:1.25rem}
+.input-tab{flex:1;padding:.55rem;border:none;background:transparent;color:var(--text2);font-family:var(--font);font-size:15px;cursor:pointer;transition:all .15s;font-weight:500}
+.input-tab.on-text{background:var(--gold-bg);color:var(--gold)}
+.input-tab.on-img{background:rgba(144,96,224,.12);color:#9060e0}
+.input-tab:hover:not(.on-text):not(.on-img){background:var(--card-hi);color:var(--text)}
+.ai-result-header{display:flex;align-items:center;justify-content:space-between;padding:.65rem .9rem;background:rgba(144,96,224,.07);border:1px solid rgba(144,96,224,.2);border-radius:8px;margin-bottom:1.25rem}
+/* Auth */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:var(--bg)}
+.auth-card{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--border-hi);border-radius:16px;padding:2rem}
+.auth-logo{display:flex;align-items:center;gap:.875rem;margin-bottom:2rem}
+.auth-tabs{display:flex;border:1px solid var(--border-hi);border-radius:8px;overflow:hidden;margin-bottom:1.5rem}
+.auth-tab{flex:1;padding:.55rem;border:none;background:transparent;color:var(--text2);font-family:var(--font);font-size:15px;cursor:pointer;transition:all .15s;font-weight:500}
+.auth-tab.on{background:var(--gold-bg);color:var(--gold)}
+.auth-err{background:rgba(232,85,85,.08);border:1px solid rgba(232,85,85,.25);border-radius:7px;padding:.65rem .9rem;font-size:16px;color:var(--red);margin-bottom:1rem}
+.auth-ok{background:rgba(77,191,114,.08);border:1px solid rgba(77,191,114,.25);border-radius:7px;padding:.65rem .9rem;font-size:16px;color:var(--green);margin-bottom:1rem}
+.auth-hint{text-align:center;font-size:15px;color:var(--text2);margin-top:1.25rem;line-height:1.6}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+.sync-dot.syncing{background:var(--gold);animation:pulse 1.2s ease-in-out infinite}
+.sync-dot.err{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+/* Splash */
+.splash{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.25rem}
+.splash-ring{width:48px;height:48px;border:3px solid var(--border-hi);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Setup banner */
+.setup-banner{background:rgba(217,120,64,.07);border:1px solid rgba(217,120,64,.3);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem}
+@media(max-width:640px){.two-col{grid-template-columns:1fr}.people-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useMemo,useRef}=React;
+const {createRoot}=ReactDOM;
+
+/* ══════════════════════════════════════════════════════════
+   ⚙  CONFIGURATION — Replace these 2 values after setup
+   ══════════════════════════════════════════════════════════ */
+const SUPABASE_URL  = 'https://cwoyplcokcnsfqglluaa.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3b3lwbGNva2Nuc2ZxZ2xsdWFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMDQ0MDAsImV4cCI6MjA4OTY4MDQwMH0.e0stEGYLAhjU8dJuMrE2Duv3Pl7SB4Er02dUITIa6aQ';
+
+const isConfigured = !SUPABASE_URL.startsWith('YOUR_');
+const AI_PROXY = 'https://ris-proxy.gabrielayman97.workers.dev';
+let sb = null;
+try {
+  if (isConfigured && window.supabase) {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch(e) { console.error('Supabase init error:', e); }
+
+/* ══ CONSTANTS ════════════════════════════════════════════ */
+const DIMS=[
+  {key:'trustworthiness',label:'Trustworthiness'},
+  {key:'reliability',label:'Reliability'},
+  {key:'emotional_stability',label:'Emotional Stability'},
+  {key:'energy_impact',label:'Energy Impact'},
+  {key:'growth_contribution',label:'Growth Contribution'},
+  {key:'integrity',label:'Integrity'},
+  {key:'competence',label:'Competence'},
+  {key:'respect',label:'Respect & Limits'},
+];
+const DIGITAL_DIMS=[
+  {key:'social_tone',label:'Social Media Tone'},
+  {key:'content_quality',label:'Content Quality'},
+  {key:'online_offline_consistency',label:'Online / Offline Consistency'},
+  {key:'lifestyle_signals',label:'Lifestyle & Discipline'},
+  {key:'network_quality',label:'Network Quality'},
+];
+const W={
+  Business:   {trustworthiness:1.5,reliability:2.0,emotional_stability:0.8,energy_impact:0.5,growth_contribution:1.0,integrity:1.8,competence:2.0,respect:1.4},
+  Friendship: {trustworthiness:2.0,reliability:1.2,emotional_stability:1.5,energy_impact:2.0,growth_contribution:1.0,integrity:1.5,competence:0.3,respect:1.5},
+  Family:     {trustworthiness:1.5,reliability:1.0,emotional_stability:2.0,energy_impact:1.0,growth_contribution:0.5,integrity:1.5,competence:0.3,respect:2.0},
+  Romantic:   {trustworthiness:2.0,reliability:1.5,emotional_stability:2.0,energy_impact:1.5,growth_contribution:1.0,integrity:2.0,competence:0.5,respect:2.0},
+  Mentor:     {trustworthiness:1.5,reliability:1.5,emotional_stability:1.0,energy_impact:1.0,growth_contribution:2.5,integrity:2.0,competence:2.5,respect:1.5},
+};
+const REL_TYPES=Object.keys(W);
+const COLORS=['#c9aa71','#2ecc9a','#4dbf72','#e85555','#9060e0','#d97840','#38b8d0','#e060a0'];
+const RED_FLAGS=['Manipulation','Dishonesty','Disrespect','Victim mentality','Jealousy / Sabotage','Repeated inconsistency','Boundary violations','Emotional manipulation','Gaslighting','Chronic negativity','Passive aggression','Hidden competition','Chronic excuses','Lack of accountability','Attention-seeking behavior','Energy-draining conversations','Uses your vulnerabilities','Minimizes your achievements'];
+const GREEN_FLAGS=['Supports growth','Honest feedback','Keeps promises','Positive energy','Takes responsibility','Respects limits','Consistent behavior','Shows empathy','Inspires you','Shows up reliably','Brings opportunities','Supports long-term vision','Stable under pressure','Respects your time','Challenges you constructively','Adds value to your network'];
+const BEHAVIORAL_PATTERNS=['Repeated broken promises','Emotional instability cycles','Opportunistic behavior','Excessive dependence','Hot / cold behavior','Love bombing','Chronic victim narrative','Avoidance under pressure','Passive aggression cycles','Growth-blocking behavior','Selective loyalty','Chronic lateness / no-shows'];
+
+/* ══ SUPABASE AUTH + DATA ════════════════════════════════ */
+async function dbSignUp(email,pw){return sb.auth.signUp({email,password:pw});}
+async function dbSignIn(email,pw){return sb.auth.signInWithPassword({email,password:pw});}
+async function dbSignOut(){return sb.auth.signOut();}
+async function dbResetPassword(email){return sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.href});}
+
+async function loadData(userId){
+  try{
+    const{data,error}=await sb.from('ris_data').select('data').eq('user_id',userId).maybeSingle();
+    if(error||!data)return null;
+    return data.data;
+  }catch{return null;}
+}
+async function saveData(people,userId){
+  if(!userId)return;
+  try{
+    await sb.from('ris_data').upsert({user_id:userId,data:people,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+  }catch(e){console.warn('Save error:',e);}
+}
+
+/* ══ SCORE ENGINE ════════════════════════════════════════ */
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const initials=n=>n.trim().split(/\s+/).map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'?';
+
+function calcScore(p){
+  const wts=W[p.type]||W.Friendship;let ws=0,wt=0;
+  DIMS.forEach(({key})=>{ws+=(p.scores[key]??5)*(wts[key]??1);wt+=(wts[key]??1);});
+  let base=(ws/wt)*10;
+  const d=p.digital||{};
+  if(d.has_data){
+    const dv=DIGITAL_DIMS.map(x=>d[x.key]??5);
+    const dScore=(dv.reduce((a,v)=>a+v,0)/dv.length)*10;
+    base=base*0.65+dScore*0.35;
+    const oc=d.online_offline_consistency??5;
+    if(oc<5)base-=(5-oc)*3;
+  }
+  const ints=p.interactions||[];const rec=ints.slice(-6);let iMod=0;
+  rec.forEach((it,i)=>{
+    const r=(i+1)/rec.length;
+    if(it.value==='added')iMod+=2.5*r;else if(it.value==='drained')iMod-=3.5*r;
+    if(it.feeling==='positive')iMod+=1.5*r;else if(it.feeling==='negative')iMod-=2*r;
+    if(it.tone==='manipulative')iMod-=3*r;else if(it.tone==='dismissive')iMod-=2*r;else if(it.tone==='supportive')iMod+=2*r;
+    if(it.depth==='deep')iMod+=1.2*r;else if(it.depth==='surface')iMod-=0.6*r;
+    if(it.effort==='low')iMod-=1.2*r;else if(it.effort==='high')iMod+=1.5*r;
+  });
+  base+=Math.max(-22,Math.min(16,iMod));
+  base-=Math.min(22,(p.patterns||[]).length*3.5);
+  base-=Math.min(32,(p.red_flags||[]).length*5);
+  base+=Math.min(14,(p.green_flags||[]).length*1.5);
+  return Math.max(0,Math.min(100,Math.round(base)));
+}
+function calcTrend(p){
+  const ints=p.interactions||[];if(ints.length<3)return'Stable';
+  const sc=it=>{let s=0;if(it.value==='added')s+=2.5;else if(it.value==='drained')s-=3;if(it.feeling==='positive')s+=1.5;else if(it.feeling==='negative')s-=2;if(it.tone==='manipulative')s-=2.5;else if(it.tone==='supportive')s+=1.5;if(it.effort==='high')s+=1;else if(it.effort==='low')s-=1;return s;};
+  const scores=ints.slice(-6).map(sc);const mean=scores.reduce((a,v)=>a+v,0)/scores.length;
+  const variance=scores.reduce((a,v)=>a+(v-mean)**2,0)/scores.length;
+  if(variance>9&&scores.length>=4)return'Volatile';
+  const recent=scores.slice(-3).reduce((a,v)=>a+v,0)/3;const older=scores.slice(0,-3);const omean=older.length?older.reduce((a,v)=>a+v,0)/older.length:recent;
+  if(recent>omean+0.7)return'Improving';if(recent<omean-0.7)return'Declining';return'Stable';
+}
+function getRiskLevel(p){
+  const sc=calcScore(p),rf=(p.red_flags||[]).length,pat=(p.patterns||[]).length,tr=calcTrend(p);
+  if(sc<30||rf>=5||(tr==='Declining'&&sc<45)||(tr==='Volatile'&&sc<50))return{label:'Critical',color:'#e85555',bg:'rgba(232,85,85,.1)'};
+  if(sc<50||rf>=3||pat>=4)return{label:'High',color:'#d97840',bg:'rgba(217,120,64,.1)'};
+  if(sc<65||rf>=2||pat>=2)return{label:'Medium',color:'#c9aa71',bg:'rgba(201,170,113,.1)'};
+  return{label:'Low',color:'#4dbf72',bg:'rgba(77,191,114,.1)'};
+}
+function getValueType(p){
+  const s=p.scores||{},sc=calcScore(p),gf=p.green_flags||[];
+  if(sc<35)return{label:'Toxic',color:'#e85555'};
+  const strategic=((s.competence||5)+(s.growth_contribution||5)+(s.reliability||5))/3;
+  const emotional=((s.energy_impact||5)+(s.emotional_stability||5)+(s.trustworthiness||5))/3;
+  if(strategic>=7.5||gf.includes('Brings opportunities'))return{label:'Strategic',color:'#2ecc9a'};
+  if((s.growth_contribution||0)>=7||gf.includes('Supports long-term vision'))return{label:'Developmental',color:'#9060e0'};
+  if(emotional>=7||gf.includes('Positive energy'))return{label:'Emotional',color:'#4dbf72'};
+  if(sc>=60)return{label:'Social',color:'#38b8d0'};
+  return{label:'Neutral',color:'#6a6a8a'};
+}
+function getDecision(sc){
+  if(sc>=80)return{label:'Invest Deeply',color:'#4dbf72',bg:'rgba(77,191,114,.1)',action:'High-value relationship. Prioritize, deepen investment, and be fully reciprocal.'};
+  if(sc>=60)return{label:'Maintain',color:'#2ecc9a',bg:'rgba(46,204,154,.1)',action:'Maintain with awareness. Monitor patterns. Avoid over-investing emotionally.'};
+  if(sc>=40)return{label:'Limit Exposure',color:'#d97840',bg:'rgba(217,120,64,.1)',action:'Reduce emotional investment. Set firm limits. Reconsider this person\'s role.'};
+  return{label:'Distance / Remove',color:'#e85555',bg:'rgba(232,85,85,.1)',action:'Relationship costs exceed value. Create distance or remove from inner circle.'};
+}
+function getEnergyImpact(p){
+  const ints=p.interactions||[];if(!ints.length)return null;
+  const n=ints.length,pos=ints.filter(i=>i.value==='added'||i.feeling==='positive').length,neg=ints.filter(i=>i.value==='drained'||i.feeling==='negative').length;
+  const neu=Math.max(0,n-pos-neg),pct=v=>Math.round(v/n*100);
+  const label=pos/n>0.6?'Net Positive':pos/n<0.35?'Net Negative':'Mixed';
+  const color=pos/n>0.6?'#4dbf72':pos/n<0.35?'#e85555':'#c9aa71';
+  const totalMins=ints.reduce((a,i)=>a+(i.time_spent||0),0);
+  return{positive:pct(pos),negative:pct(neg),neutral:pct(neu),label,color,totalMins};
+}
+function calcConsistency(p){
+  const ints=p.interactions||[];if(ints.length<3)return null;
+  const sc=it=>{let s=5;if(it.value==='added')s+=2;else if(it.value==='drained')s-=2;if(it.feeling==='positive')s+=1;else if(it.feeling==='negative')s-=1;return s;};
+  const scores=ints.map(sc),mean=scores.reduce((a,v)=>a+v,0)/scores.length,sd=Math.sqrt(scores.reduce((a,v)=>a+(v-mean)**2,0)/scores.length);
+  return+(Math.max(0,Math.min(10,10-sd*1.5))).toFixed(1);
+}
+function detectBias(p){
+  const out=[],s=p.scores||{},sc=calcScore(p);
+  const recNeg=(p.interactions||[]).slice(-3).filter(i=>i.feeling==='negative'||i.value==='drained').length;
+  if((s.energy_impact||5)>=8&&(s.reliability||5)<=4)out.push('Charm overvaluation — high energy score paired with low reliability.');
+  if(recNeg>=2&&sc>=60)out.push('Cognitive dissonance — recent interactions are mostly negative yet overall score stays high.');
+  if((s.trustworthiness||5)>=8&&(s.reliability||5)<=4)out.push('Trust inflation — trustworthiness scored high but reliability is low.');
+  if((p.interactions||[]).length<3&&sc>=70)out.push('Thin data — fewer than 3 interactions logged. Score reflects impression, not evidence.');
+  if((p.red_flags||[]).length>=2&&sc>=60)out.push(`${(p.red_flags||[]).length} red flags logged but score stays high. These may be psychologically minimized.`);
+  if(calcTrend(p)==='Volatile'&&sc>=65)out.push('Volatile pattern at a high score. Unpredictability is itself a form of unreliability.');
+  if((p.patterns||[]).includes('Love bombing')&&sc>=65)out.push('Love bombing detected. Verify score isn\'t a response to emotional intensity.');
+  return out;
+}
+function getStrengths(p){
+  const s=p.scores||{};const out=[];
+  if((s.trustworthiness||0)>=7)out.push('Highly trustworthy');if((s.reliability||0)>=7)out.push('Consistently reliable');
+  if((s.energy_impact||0)>=7)out.push('Positive energy');if((s.growth_contribution||0)>=7)out.push('Supports your growth');
+  if((s.integrity||0)>=7)out.push('Strong integrity');if((s.competence||0)>=7)out.push('High competence');
+  if((s.emotional_stability||0)>=7)out.push('Emotionally stable');if((s.respect||0)>=7)out.push('Respects boundaries');
+  (p.green_flags||[]).slice(0,3).forEach(f=>out.push(f));return[...new Set(out)].slice(0,5);
+}
+function getRisks(p){
+  const s=p.scores||{};const out=[];
+  if((s.trustworthiness||10)<=4)out.push('Low trustworthiness');if((s.reliability||10)<=4)out.push('Inconsistent behavior');
+  if((s.energy_impact||10)<=4)out.push('Energy-draining');if((s.integrity||10)<=4)out.push('Low integrity');
+  if((s.emotional_stability||10)<=4)out.push('Emotional instability');if((s.respect||10)<=4)out.push('Boundary issues');
+  (p.red_flags||[]).slice(0,4).forEach(f=>out.push(f));(p.patterns||[]).slice(0,2).forEach(f=>out.push(f));return[...new Set(out)].slice(0,5);
+}
+const sColor=sc=>sc>=80?'#4dbf72':sc>=60?'#2ecc9a':sc>=40?'#d97840':'#e85555';
+const tColor=t=>t==='Improving'?'#4dbf72':t==='Declining'?'#e85555':t==='Volatile'?'#d97840':'#6a6a8a';
+const tArrow=t=>t==='Improving'?'↑':t==='Declining'?'↓':t==='Volatile'?'~':'→';
+const fmtDate=d=>new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+const fmtMins=m=>m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`;
+const confClass=c=>c==='high'?'hi':c==='medium'?'med':'lo';
+
+/* ══ AI ANALYSIS ════════════════════════════════════════ */
+const AI_DIGITAL_PROMPT=content=>`You are a behavioral analyst. Analyze the text below and return ONLY a raw JSON object — no markdown, no backticks.
+
+CONTENT:
+"""
+${content.slice(0,3000)}
+"""
+
+Return this exact JSON:
+{"scores":{"social_tone":<1-10>,"content_quality":<1-10>,"online_offline_consistency":<1-10>,"lifestyle_signals":<1-10>,"network_quality":<1-10>},"confidence":{"social_tone":"<low|medium|high>","content_quality":"<low|medium|high>","online_offline_consistency":"<low|medium|high>","lifestyle_signals":"<low|medium|high>","network_quality":"<low|medium|high>"},"reasoning":{"social_tone":"<one factual sentence>","content_quality":"<one factual sentence>","online_offline_consistency":"<one factual sentence — state if estimated>","lifestyle_signals":"<one factual sentence>","network_quality":"<one factual sentence — state if estimated>"},"signals":{"tone_summary":"<3-5 words>","personality_indicators":["<trait>","<trait>","<trait>"],"content_type":"<value-driven|attention-seeking|mixed|unclear>","consistency_pattern":"<authentic|performative|inconsistent|unclear>","environment_quality":"<high-caliber|mixed|low-quality|unclear>","notable_patterns":"<one sentence or null>"},"data_quality":"<weak|moderate|strong>","overall_confidence":"<low|medium|high>","warnings":["<what could NOT be determined>"],"assumptions":["<assumption made>"]}
+
+Rules: Score 5 when signals absent. Low confidence for short/vague samples. Never fabricate. data_quality: weak<200 chars, moderate 200-800, strong>800.`;
+
+async function analyzeWithAI(content){
+  const res=await fetch(AI_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:AI_DIGITAL_PROMPT(content)}]})});
+  if(!res.ok)throw new Error(`API error ${res.status}`);
+  const data=await res.json();
+  const text=data.content.map(i=>i.text||'').filter(Boolean).join('');
+  return JSON.parse(text.replace(/```json|```/g,'').trim());
+}
+
+const AI_IMAGE_PROMPT=`You are a behavioral analyst. Analyze this image for social and behavioral signals. Return ONLY raw JSON, no markdown, no backticks.
+
+Look for: facial expressions, body language, environment quality, lifestyle signals, social context, clothing/presentation, apparent mood, confidence level, social environment.
+
+Return this exact JSON:
+{"scores":{"social_tone":<1-10>,"content_quality":<1-10>,"online_offline_consistency":<1-10>,"lifestyle_signals":<1-10>,"network_quality":<1-10>},"confidence":{"social_tone":"<low|medium|high>","content_quality":"<low|medium|high>","online_offline_consistency":"<low|medium|high>","lifestyle_signals":"<low|medium|high>","network_quality":"<low|medium|high>"},"reasoning":{"social_tone":"<one factual sentence from image>","content_quality":"<one factual sentence>","online_offline_consistency":"<estimated — state if uncertain>","lifestyle_signals":"<one factual sentence>","network_quality":"<one factual sentence>"},"signals":{"tone_summary":"<3-5 words>","personality_indicators":["<observed trait>","<observed trait>","<observed trait>"],"content_type":"<value-driven|attention-seeking|mixed|unclear>","consistency_pattern":"<authentic|performative|inconsistent|unclear>","environment_quality":"<high-caliber|mixed|low-quality|unclear>","notable_patterns":"<one sentence or null>"},"data_quality":"<weak|moderate|strong>","overall_confidence":"<low|medium|high>","warnings":["<what could NOT be reliably determined>"],"assumptions":["<assumption made>"]}
+
+Rules: Score 5 when signals absent. Low confidence when unclear. Never fabricate. State all inferences clearly.`;
+
+async function analyzeImageWithAI(base64Data,mimeType){
+  const res=await fetch(AI_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mimeType,data:base64Data}},{type:'text',text:AI_IMAGE_PROMPT}]}]})});
+  if(!res.ok)throw new Error(`API error ${res.status}`);
+  const data=await res.json();
+  const text=data.content.map(i=>i.text||'').filter(Boolean).join('');
+  return JSON.parse(text.replace(/```json|```/g,'').trim());
+}
+
+/* ══ SAMPLE DATA ════════════════════════════════════════ */
+const SAMPLES=[
+  {id:'s1',name:'Alex Turner',type:'Business',color:'#2ecc9a',scores:{trustworthiness:7,reliability:8,emotional_stability:7,energy_impact:6,growth_contribution:8,integrity:7,competence:9,respect:7},digital:{has_data:false,mode:'manual',social_tone:5,content_quality:5,online_offline_consistency:5,lifestyle_signals:5,network_quality:5},patterns:[],time_investment:{hours_per_month:12,value_received:8,value_given:7,emotional_cost:3},interactions:[{id:'i1',date:new Date(Date.now()-14*864e5).toISOString(),summary:'Delivered project on time with proactive communication.',feeling:'positive',value:'added',tone:'respectful',depth:'meaningful',effort:'high',time_spent:90,flags:[]}],red_flags:[],green_flags:['Keeps promises','Honest feedback','Shows up reliably'],notes:'Key business partner.',created:new Date(Date.now()-45*864e5).toISOString(),updated:new Date().toISOString()},
+  {id:'s2',name:'Maya Chen',type:'Friendship',color:'#4dbf72',scores:{trustworthiness:9,reliability:4,emotional_stability:7,energy_impact:9,growth_contribution:6,integrity:8,competence:5,respect:8},digital:{has_data:false,mode:'manual',social_tone:5,content_quality:5,online_offline_consistency:5,lifestyle_signals:5,network_quality:5},patterns:['Repeated broken promises'],time_investment:{hours_per_month:6,value_received:7,value_given:8,emotional_cost:4},interactions:[{id:'i3',date:new Date(Date.now()-25*864e5).toISOString(),summary:'Long conversation — genuinely uplifting.',feeling:'positive',value:'added',tone:'supportive',depth:'deep',effort:'high',time_spent:120,flags:[]},{id:'i4',date:new Date(Date.now()-8*864e5).toISOString(),summary:'Canceled plans last minute again.',feeling:'negative',value:'neutral',tone:'respectful',depth:'surface',effort:'low',time_spent:5,flags:[]}],red_flags:['Repeated inconsistency'],green_flags:['Positive energy','Shows empathy'],notes:'Wonderful person. Reliability is the pattern to monitor.',created:new Date(Date.now()-120*864e5).toISOString(),updated:new Date().toISOString()},
+];
+
+/* ══ VISUAL COMPONENTS ══════════════════════════════════ */
+function ScoreArc({score,size=80}){
+  const stroke=7,r=(size-stroke)/2,c=2*Math.PI*r,arc=c*.75,fill=(score/100)*arc,color=sColor(score);
+  return(
+    <div style={{position:'relative',width:size,height:size,flexShrink:0}}>
+      <svg width={size} height={size} style={{transform:'rotate(135deg)'}}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={stroke} strokeDasharray={`${arc} ${c}`} strokeLinecap="round"/>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeDasharray={`${fill} ${c-fill}`} strokeLinecap="round" style={{transition:'stroke-dasharray .5s'}}/>
+      </svg>
+      <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <span style={{fontFamily:'var(--mono)',fontSize:size/3.5,fontWeight:700,color}}>{score}</span>
+      </div>
+    </div>
+  );
+}
+function DimBar({label,value,highlight}){
+  const color=value>=7?'#4dbf72':value>=5?'#2ecc9a':'#e85555';
+  return(<div className="dim-row"><span className="dim-label" style={highlight?{color:'var(--gold)'}:{}}>{label}{highlight?' ★':''}</span><div className="dim-bar-bg"><div className="dim-bar-fill" style={{width:`${value*10}%`,background:color}}/></div><span className="dim-val fm">{value}</span></div>);
+}
+function EnergyBar({ei}){
+  if(!ei)return<span className="fxs fd">No interactions yet</span>;
+  return(<div><div className="ebar"><div className="ebar-seg" style={{width:`${ei.positive}%`,background:'#4dbf72'}}/><div className="ebar-seg" style={{width:`${ei.neutral}%`,background:'rgba(255,255,255,0.08)'}}/><div className="ebar-seg" style={{width:`${ei.negative}%`,background:'#e85555'}}/></div><div className="fl g12 fli fxs"><span><span className="fm" style={{color:'#4dbf72'}}>{ei.positive}%</span> <span className="fd">positive</span></span><span><span className="fm" style={{color:'#6a6a8a'}}>{ei.neutral}%</span> <span className="fd">neutral</span></span><span><span className="fm" style={{color:'#e85555'}}>{ei.negative}%</span> <span className="fd">negative</span></span>{ei.totalMins>0&&<span className="fd">· {fmtMins(ei.totalMins)} total</span>}</div></div>);
+}
+
+/* ══ PERSON CARD ════════════════════════════════════════ */
+function PCard({person,onClick}){
+  const sc=calcScore(person),tr=calcTrend(person),dec=getDecision(sc),risk=getRiskLevel(person),vt=getValueType(person),col=sColor(sc),ei=getEnergyImpact(person);
+  return(
+    <div className="pcard" onClick={onClick} style={{'--accent':person.color}}>
+      <div className="fl fli g12 mb12">
+        <div className="avatar" style={{background:`${person.color}18`,color:person.color}}>{initials(person.name)}</div>
+        <div style={{flex:1,minWidth:0}}><div className="fw5" style={{fontSize:15,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{person.name}</div><div className="fxs fd" style={{textTransform:'uppercase',letterSpacing:'.07em',marginTop:1}}>{person.type}</div></div>
+        <div style={{textAlign:'right'}}><div className="fm fw6" style={{fontSize:26,color:col,lineHeight:1}}>{sc}</div><div style={{fontSize:11,color:tColor(tr)}}>{tArrow(tr)} {tr}</div></div>
+      </div>
+      <div className="sbar-bg"><div className="sbar-fill" style={{width:`${sc}%`,background:col}}/></div>
+      <div className="fl fli flb flw g6 mb8">
+        <span className="dbadge" style={{color:dec.color,background:dec.bg,border:`1px solid ${dec.color}22`}}>{dec.label}</span>
+        <div className="fl g6"><span className="dbadge" style={{color:risk.color,background:risk.bg,border:`1px solid ${risk.color}22`}}>{risk.label} Risk</span><span className="dbadge" style={{color:vt.color,background:`${vt.color}14`,border:`1px solid ${vt.color}22`}}>{vt.label}</span></div>
+      </div>
+      {ei&&<EnergyBar ei={ei}/>}
+    </div>
+  );
+}
+
+/* ══ DASHBOARD ══════════════════════════════════════════ */
+function Dashboard({people,onSelect,onAdd}){
+  const[filter,setFilter]=useState('All');const[sort,setSort]=useState('score');
+  const types=useMemo(()=>['All',...REL_TYPES.filter(t=>people.some(p=>p.type===t))],[people]);
+  const filtered=useMemo(()=>{
+    let p=filter==='All'?people:people.filter(x=>x.type===filter);
+    const s=p.map(x=>({...x,_s:calcScore(x),_t:calcTrend(x)}));
+    if(sort==='score')return s.sort((a,b)=>b._s-a._s);if(sort==='name')return s.sort((a,b)=>a.name.localeCompare(b.name));
+    if(sort==='risk'){const o=['Critical','High','Medium','Low'];return s.sort((a,b)=>o.indexOf(getRiskLevel(a).label)-o.indexOf(getRiskLevel(b).label));}
+    if(sort==='trend'){const o=['Declining','Volatile','Stable','Improving'];return s.sort((a,b)=>o.indexOf(a._t)-o.indexOf(b._t));}return s;
+  },[people,filter,sort]);
+  const stats=useMemo(()=>{const sc=people.map(calcScore);return{total:people.length,avg:sc.length?Math.round(sc.reduce((a,v)=>a+v,0)/sc.length):0,invest:sc.filter(s=>s>=80).length,critical:people.filter(p=>getRiskLevel(p).label==='Critical').length,volatile:people.filter(p=>calcTrend(p)==='Volatile').length};},[people]);
+  return(
+    <div>
+      {people.length>0&&(<div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:'.6rem',marginBottom:'1.5rem'}}>{[{l:'Profiles',v:stats.total,c:'var(--text)'},{l:'Avg Score',v:stats.avg,c:sColor(stats.avg)},{l:'Invest',v:stats.invest,c:'#4dbf72'},{l:'Critical',v:stats.critical,c:'#e85555'},{l:'Volatile',v:stats.volatile,c:'#d97840'}].map(({l,v,c})=>(<div key={l} className="stat-card"><div className="stat-label">{l}</div><div className="stat-val" style={{color:c}}>{v}</div></div>))}</div>)}
+      <div className="fl fli flb flw g8 mb16">
+        <div className="fl flw g4">{types.map(t=><button key={t} className={`ftab${filter===t?' on':''}`} onClick={()=>setFilter(t)}>{t}</button>)}</div>
+        <div className="fl g8 fli">
+          <select className="fg-sel" style={{width:'auto',fontSize:12,padding:'4px 8px'}} value={sort} onChange={e=>setSort(e.target.value)}><option value="score">Score ↓</option><option value="name">Name A–Z</option><option value="risk">Risk Level</option><option value="trend">Trend</option></select>
+          <button className="btn btnp btnsm" onClick={onAdd}>+ Add Person</button>
+        </div>
+      </div>
+      {filtered.length===0?(<div className="empty"><div style={{fontSize:38,marginBottom:12,opacity:.2}}>◈</div><div className="fw6" style={{fontSize:18,marginBottom:6}}>{people.length===0?'Begin Your Intelligence Map':'No profiles in this category'}</div><div className="fd fsm mb20">{people.length===0?'Evaluate people in your life with behavioral precision and psychological depth.':''}</div>{people.length===0&&<button className="btn btnp" onClick={onAdd}>+ Add Your First Person</button>}</div>):(<div className="people-grid">{filtered.map(p=><PCard key={p.id} person={p} onClick={()=>onSelect(p.id)}/>)}</div>)}
+    </div>
+  );
+}
+
+/* ══ PROFILE ════════════════════════════════════════════ */
+function Profile({person,onBack,onEdit,onLog,onAskDelete,onUpdatePatterns,onSaveDefense}){
+  const[tab,setTab]=useState('overview');
+  const sc=calcScore(person),tr=calcTrend(person),dec=getDecision(sc),risk=getRiskLevel(person),vt=getValueType(person);
+  const bias=detectBias(person),cons=calcConsistency(person),ei=getEnergyImpact(person);
+  const topW=Object.entries(W[person.type]||W.Friendship).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k])=>k);
+  const d=person.digital||{};
+  const togglePattern=pat=>{const c=new Set(person.patterns||[]);c.has(pat)?c.delete(pat):c.add(pat);onUpdatePatterns([...c]);};
+  const TABS=[{k:'overview',l:'Overview'},{k:'behavioral',l:'Behavioral'},{k:'digital',l:'Digital'},{k:'log',l:'Log'},{k:'defend',l:'🛡 Defend Score'}];
+  return(
+    <div>
+      <div className="breadcrumb"><span className="blink" onClick={onBack}>Dashboard</span><span className="bsep">/</span><span className="bcur">{person.name}</span></div>
+      <div className="fl flb flw g16 mb20">
+        <div className="fl fli g16">
+          <div className="avatar avatarlg" style={{background:`${person.color}18`,color:person.color}}>{initials(person.name)}</div>
+          <div><div className="fw6" style={{fontSize:21,marginBottom:3}}>{person.name}</div><div className="fxs fd" style={{textTransform:'uppercase',letterSpacing:'.07em',marginBottom:8}}>{person.type}</div>
+            <div className="fl g6 flw"><span className="dbadge" style={{color:dec.color,background:dec.bg,border:`1px solid ${dec.color}22`}}>{dec.label}</span><span className="tbadge" style={{color:tColor(tr),background:`${tColor(tr)}12`,border:`1px solid ${tColor(tr)}28`}}>{tArrow(tr)} {tr}</span><span className="dbadge" style={{color:risk.color,background:risk.bg,border:`1px solid ${risk.color}22`}}>{risk.label} Risk</span><span className="dbadge" style={{color:vt.color,background:`${vt.color}14`,border:`1px solid ${vt.color}22`}}>{vt.label}</span></div>
+          </div>
+        </div>
+        <div className="fl flc" style={{alignItems:'flex-end',gap:10}}>
+          <ScoreArc score={sc} size={88}/>
+          <div className="fl g8"><button className="btn btnsm btnp" onClick={onLog}>+ Log</button><button className="btn btnsm" onClick={onEdit}>Edit</button><button className="btn btnsm btnd" onClick={onAskDelete}>Remove</button></div>
+        </div>
+      </div>
+      <div className="tab-bar">{TABS.map(t=><button key={t.k} className={`ptab${tab===t.k?' on':''}`} onClick={()=>setTab(t.k)}>{t.l}</button>)}</div>
+      {tab==='overview'&&(<div>
+        <div style={{background:dec.bg,border:`1px solid ${dec.color}28`,borderRadius:8,padding:'.75rem 1rem',marginBottom:'1.25rem'}}><div className="fxs fw5 mb6" style={{color:dec.color}}>Recommended Action</div><div className="fsm fd">{dec.action}</div></div>
+        {bias.length>0&&(<div className="mb20"><div className="sec-title">Bias Detection</div>{bias.map((w,i)=><div key={i} className="card-warn mb8"><div className="fxs fg fw5 mb6">Potential blind spot</div><div className="fsm fd">{w}</div></div>)}</div>)}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(100px,1fr))',gap:'.6rem',marginBottom:'1.5rem'}}>{[{l:'Score',v:sc,c:sColor(sc)},{l:'Consistency',v:cons!==null?`${cons}/10`:'—',c:cons!==null?(cons>=7?'#4dbf72':cons>=5?'#2ecc9a':'#e85555'):'var(--text2)'},{l:'Interactions',v:(person.interactions||[]).length,c:'var(--text)'},{l:'Patterns',v:(person.patterns||[]).length,c:(person.patterns||[]).length>0?'#d97840':'var(--text2)'},{l:'Red Flags',v:(person.red_flags||[]).length,c:(person.red_flags||[]).length>0?'#e85555':'var(--text2)'}].map(({l,v,c})=>(<div key={l} className="stat-card"><div className="stat-label">{l}</div><div className="stat-val fm" style={{color:c,fontSize:17}}>{v}</div></div>))}</div>
+        <div className="mb20"><div className="sec-title">Energy Impact</div><EnergyBar ei={ei}/>{ei&&<div className="fxs fd mt8">Overall: <span style={{color:ei.color,fontWeight:500}}>{ei.label}</span></div>}</div>
+        <div className="two-col mb20">
+          <div><div className="sec-title">Key Strengths</div>{getStrengths(person).length>0?getStrengths(person).map((s,i)=><div key={i} className="fsm fg2 mb8 fl g6 fli"><span style={{fontSize:10}}>◆</span>{s}</div>):<div className="fxs fd">None yet</div>}</div>
+          <div><div className="sec-title">Key Risks</div>{getRisks(person).length>0?getRisks(person).map((r,i)=><div key={i} className="fsm fr mb8 fl g6 fli"><span style={{fontSize:10}}>▲</span>{r}</div>):<div className="fxs fd">None identified</div>}</div>
+        </div>
+        {person.notes&&<div><div className="sec-title">Notes</div><div className="fsm fd" style={{lineHeight:1.7}}>{person.notes}</div></div>}
+      </div>)}
+      {tab==='behavioral'&&(<div>
+        <div className="two-col mb20">
+          <div><div className="sec-title mb12">Dimensions <span className="fg fxs" style={{textTransform:'none',letterSpacing:0}}>★ = high weight</span></div>{DIMS.map(dd=><DimBar key={dd.key} label={dd.label} value={person.scores[dd.key]??5} highlight={topW.includes(dd.key)}/>)}</div>
+          <div>
+            <div className="sec-title">Consistency</div>
+            <div className="card mb16">{[{l:'Behavioral consistency',v:cons!==null?`${cons}/10`:'Insufficient data',c:cons!==null?(cons>=7?'#4dbf72':cons>=5?'#2ecc9a':'#e85555'):'var(--text2)'},{l:'Integrity',v:`${person.scores.integrity??'—'}/10`,c:sColor((person.scores.integrity??5)*10)}].map(({l,v,c})=>(<div key={l} className="fl fli flb mb8"><span className="fsm fd">{l}</span><span className="fm fxs fw5" style={{color:c}}>{v}</span></div>))}{cons!==null&&cons<6&&<div className="fxs fo mt8">Low consistency — behavioral variance detected.</div>}</div>
+            {person.time_investment&&(<div><div className="sec-title">Time ROI</div><div className="card">{[{l:'Hours/month',v:`${person.time_investment.hours_per_month||0}h`},{l:'Value received',v:`${person.time_investment.value_received||5}/10`},{l:'Value given',v:`${person.time_investment.value_given||5}/10`},{l:'Emotional cost',v:`${person.time_investment.emotional_cost||5}/10`}].map(({l,v})=>(<div key={l} className="fl fli flb mb6"><span className="fsm fd">{l}</span><span className="fm fxs">{v}</span></div>))}{(person.time_investment.value_received||5)<(person.time_investment.value_given||5)&&<div className="fxs fo mt8">Giving more than receiving.</div>}</div></div>)}
+          </div>
+        </div>
+        <div className="mb20"><div className="sec-title">Behavioral Patterns <span className="fd fxs" style={{textTransform:'none',letterSpacing:0,fontFamily:'var(--font)'}}>click to toggle · −3.5 pts each</span></div><div className="pattern-grid mb8">{BEHAVIORAL_PATTERNS.map(pat=>{const on=(person.patterns||[]).includes(pat);return<div key={pat} className={`tag tag-b${on?' on':''}`} style={{padding:'5px 10px',fontSize:11.5}} onClick={()=>togglePattern(pat)}>{pat}</div>;})}</div></div>
+        <div className="two-col"><div><div className="sec-title">Red Flags ({(person.red_flags||[]).length})</div><div className="tags-row">{(person.red_flags||[]).length===0?<span className="fxs fd">None</span>:(person.red_flags||[]).map((f,i)=><span key={i} className="tag tag-r on">{f}</span>)}</div></div><div><div className="sec-title">Green Flags ({(person.green_flags||[]).length})</div><div className="tags-row">{(person.green_flags||[]).length===0?<span className="fxs fd">None</span>:(person.green_flags||[]).map((f,i)=><span key={i} className="tag tag-g on">{f}</span>)}</div></div></div>
+      </div>)}
+      {tab==='digital'&&(<div>
+        {!d.has_data?(<div className="card" style={{textAlign:'center',padding:'2.5rem 2rem'}}><div style={{fontSize:28,opacity:.2,marginBottom:12}}>◇</div><div className="fw5 mb8">No Digital Profile</div><div className="fsm fd mb16">Add digital presence data to enable score blending and AI content analysis.</div><button className="btn btnp btnsm" onClick={onEdit}>Add Digital Data</button></div>):(
+          <div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'.6rem',marginBottom:'1.5rem'}}>{[{l:'Digital Score',v:Math.round((DIGITAL_DIMS.map(x=>d[x.key]??5).reduce((a,v)=>a+v,0)/DIGITAL_DIMS.length)*10)},{l:'Online/Offline Gap',v:`${d.online_offline_consistency}/10`},{l:'Network Quality',v:`${d.network_quality}/10`}].map(({l,v})=>(<div key={l} className="stat-card"><div className="stat-label">{l}</div><div className="stat-val fm" style={{color:sColor(typeof v==='number'?v:(parseFloat(v)/10)*100),fontSize:18}}>{v}</div></div>))}</div>
+            {d.mode==='ai'&&d.ai_result&&(<div className="ai-result-header mb16"><div className="fl fli g10"><span className="ai-badge">◈ AI-ANALYZED</span><span className="fxs fd">Analyzed {new Date(d.ai_result.analyzed_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span></div><div className="fl g8 fli"><span className={`conf-badge ${d.ai_result.data_quality==='strong'?'hi':d.ai_result.data_quality==='moderate'?'med':'lo'}`}>{d.ai_result.data_quality} data</span><span className={`conf-badge ${confClass(d.ai_result.overall_confidence)}`}>{d.ai_result.overall_confidence} confidence</span></div></div>)}
+            <div className="sec-title">Digital Presence</div>
+            <div style={{marginBottom:'1.5rem'}}>{DIGITAL_DIMS.map(dim=>{const isAI=d.mode==='ai'&&d.ai_result,conf=isAI?d.ai_result?.confidence?.[dim.key]:null;return(<div key={dim.key} className="dim-row" style={{marginBottom:'.7rem'}}><div className="dim-label"><div>{dim.label}</div>{isAI&&conf&&<div className="fl g4 mt4"><span className="ai-badge" style={{fontSize:9}}>AI</span><span className={`conf-badge ${confClass(conf)}`} style={{fontSize:9}}>{conf}</span></div>}</div><div className="dim-bar-bg"><div className="dim-bar-fill" style={{width:`${(d[dim.key]??5)*10}%`,background:(d[dim.key]??5)>=7?'#4dbf72':(d[dim.key]??5)>=5?'#2ecc9a':'#e85555'}}/></div><span className="dim-val fm">{d[dim.key]??5}</span></div>);})}</div>
+            {(d.online_offline_consistency??5)<5&&(<div className="card-danger mb16"><div className="fxs fr fw5 mb6">Inconsistency Warning</div><div className="fsm fd">Online/offline gap score: {d.online_offline_consistency}/10. Score penalty: −{(5-(d.online_offline_consistency??5))*3} pts.</div></div>)}
+            {d.mode==='ai'&&d.ai_result?.signals&&(<div className="two-col mb16"><div className="signal-box"><div className="fl fli flb mb10"><span className="fxs fg fw5">Extracted Signals</span><span className="ai-badge">AI</span></div>{[{l:'Tone',v:d.ai_result.signals.tone_summary},{l:'Content type',v:d.ai_result.signals.content_type},{l:'Authenticity',v:d.ai_result.signals.consistency_pattern},{l:'Environment',v:d.ai_result.signals.environment_quality}].map(({l,v})=>v&&(<div key={l} className="fl fli flb mb6"><span className="fxs fd">{l}</span><span className="fxs fm" style={{color:'var(--text)',textTransform:'capitalize'}}>{v}</span></div>))}{d.ai_result.signals.notable_patterns&&d.ai_result.signals.notable_patterns!=='null'&&(<div className="mt8 pt8" style={{borderTop:'1px solid var(--border)'}}><div className="fxs fd mb4">Notable pattern</div><div className="fxs" style={{lineHeight:1.6}}>{d.ai_result.signals.notable_patterns}</div></div>)}{(d.ai_result.signals.personality_indicators||[]).length>0&&(<div className="mt8 pt8" style={{borderTop:'1px solid var(--border)'}}><div className="fxs fd mb6">Personality indicators</div><div className="fl g4 flw">{d.ai_result.signals.personality_indicators.map((p,i)=><span key={i} className="tag tag-b on" style={{fontSize:10}}>{p}</span>)}</div></div>)}</div><div>{(d.ai_result.warnings||[]).length>0&&(<div className="card mb8" style={{borderColor:'rgba(144,96,224,.2)'}}><div className="fxs fw5 mb6" style={{color:'#9060e0'}}>Could not determine</div>{d.ai_result.warnings.map((w,i)=><div key={i} className="fxs fd mb4">· {w}</div>)}</div>)}{(d.ai_result.assumptions||[]).length>0&&(<div className="card-warn"><div className="fxs fg fw5 mb6">Assumptions</div>{d.ai_result.assumptions.map((a,i)=><div key={i} className="fxs fd mb4">· {a}</div>)}</div>)}</div></div>)}
+          </div>
+        )}
+      </div>)}
+      {tab==='log'&&(<div>
+        <div className="fl fli flb mb16"><div><div className="fw5" style={{fontSize:15}}>{(person.interactions||[]).length} Logged Interactions</div>{ei&&<div className="fxs fd mt6">Energy: <span style={{color:ei.color}}>{ei.label}</span>{ei.totalMins>0?` · ${fmtMins(ei.totalMins)} total`:''}</div>}</div><button className="btn btnsm btnp" onClick={onLog}>+ Log</button></div>
+        {(person.interactions||[]).length===0?(<div className="card" style={{textAlign:'center',padding:'2rem'}}><div className="fsm fd">No interactions logged yet.</div></div>):(
+          <div className="scroll-box">{[...(person.interactions||[])].reverse().map(it=>{const fc=it.feeling==='positive'?'#4dbf72':it.feeling==='negative'?'#e85555':'#6a6a8a',vc=it.value==='added'?'#4dbf72':it.value==='drained'?'#e85555':'#6a6a8a',tc=it.tone==='supportive'?'#4dbf72':it.tone==='manipulative'?'#e85555':it.tone==='dismissive'?'#d97840':'#6a6a8a';const pill=(v,c)=>(<span style={{fontSize:10,color:c,padding:'1px 6px',borderRadius:3,background:`${c}15`,fontFamily:'var(--mono)'}}>{v}</span>);return(<div key={it.id} className="it-item"><div className="fl fli flb mb8"><span className="fxs fm fd">{fmtDate(it.date)}</span><div className="fl g4 flw">{it.tone&&it.tone!=='neutral'&&pill(it.tone,tc)}{pill(it.feeling,fc)}{pill(it.value,vc)}{it.depth&&it.depth!=='moderate'&&pill(it.depth,'#6a6a8a')}{it.effort&&it.effort!=='medium'&&pill(`effort: ${it.effort}`,it.effort==='high'?'#4dbf72':'#e85555')}{it.time_spent>0&&pill(fmtMins(it.time_spent),'#6a6a8a')}</div></div><div className="fsm">{it.summary}</div>{(it.flags||[]).length>0&&<div className="fl g4 mt8 flw">{it.flags.map((f,i)=><span key={i} style={{fontSize:10,color:'#e85555',padding:'1px 5px',borderRadius:3,background:'rgba(232,85,85,.1)'}}>{f}</span>)}</div>}</div>);})}</div>
+        )}
+      </div>)}
+      {tab==='defend'&&<ScoreDefense person={person} score={sc} onSaveDefense={onSaveDefense}/>}
+    </div>
+  );
+}
+
+/* ══ SCORE DEFENSE ═══════════════════════════════════════ */
+function ScoreDefense({person,score,onSaveDefense}){
+  const[situation,setSituation]=useState(person.defense_log?.slice(-1)[0]?.situation||'');
+  const[state,setState]=useState(person.defense_log?.length>0?'done':'idle');
+  const[result,setResult]=useState(person.defense_log?.slice(-1)[0]?.result||null);
+  const[err,setErr]=useState(null);
+  const[saved,setSaved]=useState(false);
+
+  const DEFENSE_PROMPT=(p,sc,sit)=>`You are a senior behavioral psychologist and decision analyst. A user has rated someone in their life and you must challenge and validate that score using strict psychological methodology.
+
+PERSON BEING RATED:
+- Name: ${p.name}
+- Relationship type: ${p.type}
+- Current score: ${sc}/100
+- Red flags logged: ${(p.red_flags||[]).join(', ')||'none'}
+- Green flags logged: ${(p.green_flags||[]).join(', ')||'none'}
+- Behavioral patterns: ${(p.patterns||[]).join(', ')||'none'}
+- Interactions logged: ${(p.interactions||[]).length}
+- Recent interaction summaries: ${(p.interactions||[]).slice(-3).map(i=>i.summary).join(' | ')||'none'}
+- Dimension scores: ${Object.entries(p.scores||{}).map(([k,v])=>k+':'+v).join(', ')}
+
+USER'S DESCRIPTION OF THE SITUATION:
+"${sit}"
+
+Run the full 10-step Score Defense Protocol. Return ONLY raw JSON (no markdown, no backticks):
+
+{
+  "initial_score": ${sc},
+  "corrected_score": <integer 0-100, your corrected overall score>,
+  "confidence_level": <integer 0-100, how reliable is this evaluation>,
+  "score_change_direction": "<raised|lowered|confirmed>",
+  "score_change_reason": "<one clear sentence explaining why score was changed or confirmed>",
+  "objective_behavior": "<what actually happened — facts only, no emotions>",
+  "subjective_reaction": "<what the user felt — separated from facts>",
+  "category_scores": {
+    "trustworthiness": {"score": <1-10>, "reason": "<evidence-based one sentence>"},
+    "reliability": {"score": <1-10>, "reason": "<evidence-based one sentence>"},
+    "emotional_stability": {"score": <1-10>, "reason": "<evidence-based one sentence>"},
+    "respect_and_boundaries": {"score": <1-10>, "reason": "<evidence-based one sentence>"},
+    "integrity": {"score": <1-10>, "reason": "<evidence-based one sentence>"},
+    "energy_impact": {"score": <1-10>, "reason": "<evidence-based one sentence>"},
+    "growth_contribution": {"score": <1-10>, "reason": "<evidence-based one sentence>"}
+  },
+  "why_not_higher": "<what evidence supports keeping score above the initial rating — any positive behaviors observed?>",
+  "why_not_lower": "<is there evidence they deserve even lower — repeated patterns or one incident?>",
+  "emotional_impact_score": <0-10, how much emotion is involved>,
+  "evidence_strength_score": <0-10, how strong is the behavioral evidence>,
+  "emotion_exceeded_evidence": <true|false>,
+  "pattern_or_incident": "<pattern|incident|unclear>",
+  "pattern_analysis": "<is this score based on repeated behavior or a single event? explain>",
+  "biases_detected": ["<recency bias|halo effect|horn effect|projection|emotional contamination — list any detected>"],
+  "bias_explanation": "<explain each detected bias and how it may have distorted the score>",
+  "time_factor": "<recent only|consistent over time|unknown>",
+  "final_justification": "<2-3 sentence final verdict — is the score fair, what does the evidence actually say, what should the user do with this information>",
+  "action_recommendation": "<one concrete action: keep rating, raise it, lower it, gather more data, set a limit, remove from life, etc.>"
+}
+
+Critical rules:
+- Emotion can influence score but cannot exceed 30% weight
+- Single incident = mark as temporary, penalize less
+- If bias detected, recalculate accordingly
+- Be honest — if score is too harsh, say so. If too lenient, say so.
+- Base everything on behavioral evidence, not assumptions`;
+
+  const run=async()=>{
+    if(!situation.trim())return alert('Describe what happened with this person first.');
+    setState('loading');setResult(null);setErr(null);
+    try{
+      const res=await fetch(AI_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1800,messages:[{role:'user',content:DEFENSE_PROMPT(person,score,situation)}]})});
+      if(!res.ok)throw new Error('API error '+res.status);
+      const data=await res.json();
+      const text=data.content.map(i=>i.text||'').join('');
+      const r=JSON.parse(text.replace(/```json|```/g,'').trim());
+      setResult(r);setState('done');setSaved(false);
+    }catch(e){setErr('Analysis failed: '+e.message);setState('error');}
+  };
+
+  const dirColor=r=>r==='raised'?'#4dbf72':r==='lowered'?'#e85555':'#c9aa71';
+  const dirLabel=r=>r==='raised'?'↑ Score raised':r==='lowered'?'↓ Score lowered':'→ Score confirmed';
+
+  return(
+    <div>
+      {/* Intro */}
+      <div style={{background:'rgba(201,170,113,.06)',border:'1px solid var(--border-gold)',borderRadius:10,padding:'1rem 1.125rem',marginBottom:'1.5rem'}}>
+        <div className="fw6 fg mb6" style={{fontSize:16}}>🛡 Score Defense Protocol</div>
+        <div className="fsm fd" style={{lineHeight:1.7}}>Before accepting your rating of <span className="fm fw6" style={{color:sColor(score)}}>{score}/100</span>, this system challenges it using 10 psychological validation steps — separating what happened from what you felt, detecting bias, and rebuilding the score on evidence. No rating is accepted without a defense.</div>
+      </div>
+
+      {/* Situation input */}
+      <div className="fgroup">
+        <label className="flabel">Describe what happened with {person.name}</label>
+        <textarea className="fg-ta" style={{minHeight:130,fontSize:15}} value={situation} onChange={e=>{setSituation(e.target.value);if(state==='done'){setState('idle');setResult(null);}}} placeholder={`Be specific and honest. Include:\n• What they did or said\n• How it made you feel\n• Whether this is a pattern or one incident\n• How long you've known them\n\nExample: "She promised to help me with the project but disappeared when I needed her. This has happened 3 times. I feel used but she's always very warm when she wants something."`}/>
+      </div>
+
+      <div className="fl fli g12 mb16">
+        <button className="btn" style={{background:'rgba(201,170,113,.1)',borderColor:'var(--border-gold)',color:'var(--gold)',opacity:state==='loading'?.55:1,fontSize:15,padding:'.55rem 1.25rem'}} onClick={run} disabled={state==='loading'}>
+          {state==='loading'?'Running defense…':state==='done'?'↺ Re-challenge':'⚖ Challenge This Score'}
+        </button>
+        {state==='done'&&<span className="fxs fg2 fw5">✓ Defense complete</span>}
+      </div>
+
+      {state==='loading'&&(
+        <div className="ai-thinking mb16">
+          <div className="ai-dots"><div className="ai-dot"/><div className="ai-dot"/><div className="ai-dot"/></div>
+          <div><div className="fsm fw5 fp">Running 10-step psychological validation…</div><div className="fxs fd mt4">Separating facts from emotions · Checking for bias · Rebuilding score on evidence</div></div>
+        </div>
+      )}
+
+      {state==='error'&&err&&<div className="card-danger mb16"><div className="fxs fr fw5 mb4">Analysis failed</div><div className="fxs fd">{err}</div></div>}
+
+      {state==='done'&&result&&(
+        <div>
+          {/* Verdict banner */}
+          <div style={{background:`${dirColor(result.score_change_direction)}14`,border:`1px solid ${dirColor(result.score_change_direction)}44`,borderRadius:12,padding:'1.125rem 1.25rem',marginBottom:'1.5rem'}}>
+            <div className="fl fli flb mb8">
+              <span className="fw6" style={{fontSize:18,color:dirColor(result.score_change_direction)}}>{dirLabel(result.score_change_direction)}</span>
+              <div className="fl g12 fli">
+                <div style={{textAlign:'center'}}><div className="fxs fd">Initial</div><div className="fm fw6" style={{fontSize:20,color:sColor(result.initial_score)}}>{result.initial_score}</div></div>
+                <span style={{fontSize:20,color:'var(--text2)'}}>→</span>
+                <div style={{textAlign:'center'}}><div className="fxs fd">Corrected</div><div className="fm fw6" style={{fontSize:24,color:sColor(result.corrected_score)}}>{result.corrected_score}</div></div>
+              </div>
+            </div>
+            <div className="fsm" style={{lineHeight:1.6}}>{result.score_change_reason}</div>
+            <div className="fl fli g12 mt10">
+              <div className="fl fli g6"><span className="fxs fd">Confidence:</span><span className="fm fw5 fg">{result.confidence_level}%</span></div>
+              <div className="fl fli g6"><span className="fxs fd">Data quality:</span><span className="fm fxs" style={{color:result.evidence_strength_score>=7?'#4dbf72':result.evidence_strength_score>=5?'#c9aa71':'#e85555'}}>{result.evidence_strength_score}/10</span></div>
+              <div className="fl fli g6"><span className="fxs fd">Emotion weight:</span><span className="fm fxs" style={{color:result.emotion_exceeded_evidence?'#e85555':'#4dbf72'}}>{result.emotional_impact_score}/10 {result.emotion_exceeded_evidence?'⚠ exceeded 30%':''}</span></div>
+            </div>
+          </div>
+
+          {/* Facts vs Feelings */}
+          <div className="two-col mb16">
+            <div className="card" style={{borderColor:'rgba(74,133,232,.2)'}}>
+              <div className="fxs fb fw5 mb6">What Actually Happened (Facts)</div>
+              <div className="fsm fd" style={{lineHeight:1.7}}>{result.objective_behavior}</div>
+            </div>
+            <div className="card" style={{borderColor:'rgba(217,120,64,.2)'}}>
+              <div className="fxs fo fw5 mb6">What You Felt (Emotion)</div>
+              <div className="fsm fd" style={{lineHeight:1.7}}>{result.subjective_reaction}</div>
+            </div>
+          </div>
+
+          {/* Category breakdown */}
+          <div className="mb16">
+            <div className="sec-title">Category-by-Category Breakdown</div>
+            {result.category_scores&&Object.entries(result.category_scores).map(([k,v])=>(
+              <div key={k} style={{marginBottom:'.875rem',padding:'.75rem 1rem',background:'var(--card)',border:'1px solid var(--border)',borderRadius:8}}>
+                <div className="fl fli flb mb4">
+                  <span className="fsm fw5" style={{textTransform:'capitalize'}}>{k.replace(/_/g,' ')}</span>
+                  <span className="fm fw6" style={{color:sColor(v.score*10),fontSize:16}}>{v.score}/10</span>
+                </div>
+                <div className="fxs fd" style={{lineHeight:1.6}}>{v.reason}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Pattern vs Incident */}
+          <div className="card mb16" style={{borderColor:result.pattern_or_incident==='pattern'?'rgba(232,85,85,.25)':'rgba(201,170,113,.25)'}}>
+            <div className="fl fli flb mb6">
+              <span className="fsm fw5">Pattern vs Incident</span>
+              <span className={`dbadge`} style={{color:result.pattern_or_incident==='pattern'?'#e85555':'#c9aa71',background:result.pattern_or_incident==='pattern'?'rgba(232,85,85,.1)':'rgba(201,170,113,.1)',border:`1px solid ${result.pattern_or_incident==='pattern'?'rgba(232,85,85,.3)':'rgba(201,170,113,.3)'}`}}>{result.pattern_or_incident==='pattern'?'Repeated Pattern':'Single Incident'}</span>
+            </div>
+            <div className="fsm fd" style={{lineHeight:1.7}}>{result.pattern_analysis}</div>
+            <div className="fxs fd mt6">Time factor: <span className="fm" style={{color:'var(--text)'}}>{result.time_factor}</span></div>
+          </div>
+
+          {/* Why not higher / lower */}
+          <div className="two-col mb16">
+            <div className="card">
+              <div className="fxs fg2 fw5 mb6">Why Not Higher?</div>
+              <div className="fsm fd" style={{lineHeight:1.7}}>{result.why_not_higher}</div>
+            </div>
+            <div className="card">
+              <div className="fxs fr fw5 mb6">Why Not Lower?</div>
+              <div className="fsm fd" style={{lineHeight:1.7}}>{result.why_not_lower}</div>
+            </div>
+          </div>
+
+          {/* Bias detection */}
+          {result.biases_detected?.length>0&&(
+            <div className="card-warn mb16">
+              <div className="fxs fg fw5 mb6">⚠ Biases Detected</div>
+              <div className="fl g6 flw mb8">{result.biases_detected.map((b,i)=><span key={i} className="dbadge" style={{color:'#c9aa71',background:'rgba(201,170,113,.1)',border:'1px solid rgba(201,170,113,.25)',fontSize:11}}>{b}</span>)}</div>
+              <div className="fsm fd" style={{lineHeight:1.7}}>{result.bias_explanation}</div>
+            </div>
+          )}
+
+          {/* Final verdict */}
+          <div style={{background:'rgba(46,204,154,.06)',border:'1px solid rgba(46,204,154,.25)',borderRadius:10,padding:'1rem 1.125rem'}}>
+            <div className="fsm fw6 fg2 mb8">Final Verdict</div>
+            <div className="fsm" style={{lineHeight:1.75,marginBottom:'.75rem'}}>{result.final_justification}</div>
+            <div style={{background:'rgba(46,204,154,.1)',borderRadius:7,padding:'.6rem .875rem'}}>
+              <span className="fxs fw5 fg2">Recommended action: </span>
+              <span className="fsm">{result.action_recommendation}</span>
+            </div>
+          </div>
+
+          {/* Save corrected score */}
+          <div className="fl fli g12 mt16">
+            {!saved?(
+              <button className="btn btnp" style={{fontSize:15,padding:'.65rem 1.4rem'}} onClick={()=>{
+                if(onSaveDefense)onSaveDefense(result.corrected_score,situation,result);
+                setSaved(true);
+              }}>
+                💾 Save Corrected Score ({result.corrected_score}) to Profile
+              </button>
+            ):(
+              <div className="fl fli g8">
+                <span style={{color:'#4dbf72',fontSize:16}}>✓</span>
+                <span className="fsm fg2 fw5">Corrected score saved to profile · Analysis logged</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══ DIGITAL AI PANEL ═══════════════════════════════════ */
+function DigitalAIPanel({digital,setDigital}){
+  const[inputMode,setInputMode]=useState('text');
+  const[paste,setPaste]=useState(digital.ai_result?.content_preview_full||'');
+  const[imgSrc,setImgSrc]=useState(digital.ai_result?.img_preview||null);
+  const[imgData,setImgData]=useState(null);
+  const[imgMime,setImgMime]=useState(null);
+  const[state,setState]=useState(digital.ai_result?'done':'idle');
+  const[err,setErr]=useState(null);
+  const fileRef=React.useRef();
+
+  const quality=paste.length<200?'weak':paste.length<700?'ok':'strong';
+  const qualityLabel=paste.length<200?'Short — low confidence expected':paste.length<700?'Moderate sample':'Strong sample';
+
+  const handleImagePick=e=>{
+    const file=e.target.files?.[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const result=ev.target.result;
+      // Compress image using canvas before storing
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement('canvas');
+        const MAX=800;
+        let w=img.width,h=img.height;
+        if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}}else{if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}}
+        canvas.width=w;canvas.height=h;
+        const ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0,w,h);
+        const compressed=canvas.toDataURL('image/jpeg',0.75);
+        const base64=compressed.split(',')[1];
+        setImgData(base64);
+        setImgMime('image/jpeg');
+        setImgSrc(compressed);
+        setState('idle');
+      };
+      img.src=result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const applyResult=(r,snap,extraFields={})=>{
+    setDigital(d=>({...d,mode:'ai',
+      social_tone:r.scores.social_tone,content_quality:r.scores.content_quality,
+      online_offline_consistency:r.scores.online_offline_consistency,
+      lifestyle_signals:r.scores.lifestyle_signals,network_quality:r.scores.network_quality,
+      ai_result:{...r,manual_snapshot:snap,analyzed_at:new Date().toISOString(),
+        content_preview:paste.slice(0,100),content_preview_full:paste,...extraFields}
+    }));
+    setState('done');
+  };
+
+  const run=async()=>{
+    setState('loading');setErr(null);
+    const snap={social_tone:digital.social_tone??5,content_quality:digital.content_quality??5,online_offline_consistency:digital.online_offline_consistency??5,lifestyle_signals:digital.lifestyle_signals??5,network_quality:digital.network_quality??5};
+    try{
+      if(inputMode==='image'){
+        if(!imgData)return alert('Please select an image first.');
+        const r=await analyzeImageWithAI(imgData,imgMime);
+        applyResult(r,snap,{img_preview:imgSrc,source:'image'});
+      } else {
+        if(!paste.trim())return alert('Paste some content first.');
+        const r=await analyzeWithAI(paste);
+        applyResult(r,snap,{source:'text'});
+      }
+    }catch(e){setErr('Analysis failed: '+e.message);setState('error');}
+  };
+
+  return(
+    <div>
+      {/* Input mode tabs */}
+      <div className="input-tabs">
+        <button className={`input-tab${inputMode==='text'?' on-text':''}`} onClick={()=>setInputMode('text')}>📝 Paste Text</button>
+        <button className={`input-tab${inputMode==='image'?' on-img':''}`} onClick={()=>setInputMode('image')}>📸 Analyze Photo</button>
+      </div>
+
+      {/* Text input */}
+      {inputMode==='text'&&(
+        <div className="fgroup">
+          <label className="flabel">Paste social media content</label>
+          <textarea className="fg-ta" style={{minHeight:150}} value={paste} onChange={e=>setPaste(e.target.value)} placeholder={"Paste posts, captions, bios, tweets, or any public content.\n\nAI extracts tone, personality signals, and lifestyle patterns — then auto-fills scores."}/>
+          <div className="paste-counter"><span>{paste.length} characters</span><span className={`paste-quality ${quality}`}>{qualityLabel}</span></div>
+        </div>
+      )}
+
+      {/* Image input */}
+      {inputMode==='image'&&(
+        <div className="fgroup">
+          <label className="flabel">Upload a photo</label>
+          <div className={`img-upload-box${imgSrc?' has-img':''}`} onClick={()=>fileRef.current.click()}>
+            {imgSrc?(
+              <div>
+                <img src={imgSrc} className="img-preview" alt="Selected"/>
+                <div className="fxs fd mt8">Tap to change photo</div>
+              </div>
+            ):(
+              <div>
+                <div style={{fontSize:36,marginBottom:8}}>📸</div>
+                <div className="fw5" style={{marginBottom:4}}>Tap to upload a photo</div>
+                <div className="fxs fd">Profile photo, post, screenshot — AI reads body language, environment, lifestyle signals</div>
+              </div>
+            )}
+            <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}} onChange={handleImagePick}/>
+          </div>
+          <div className="fxs fd mt8">Works with profile photos, social posts, screenshots, or any image of the person.</div>
+        </div>
+      )}
+
+      {/* Analyze button */}
+      <div className="fl fli g12 mb16">
+        <button className="btn" style={{background:'rgba(144,96,224,.1)',borderColor:'rgba(144,96,224,.3)',color:'#9060e0',opacity:state==='loading'?.55:1,fontSize:15,padding:'.5rem 1.2rem'}} onClick={run} disabled={state==='loading'}>
+          {state==='loading'?'Analyzing…':state==='done'?'↺ Re-analyze':`◈ Analyze ${inputMode==='image'?'Photo':'Content'}`}
+        </button>
+        {digital.ai_result&&state!=='loading'&&(
+          <span className="fxs fd">Last: {new Date(digital.ai_result.analyzed_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})} · {digital.ai_result.source==='image'?'📸 Photo':'📝 Text'}</span>
+        )}
+      </div>
+
+      {state==='loading'&&(
+        <div className="ai-thinking mb16">
+          <div className="ai-dots"><div className="ai-dot"/><div className="ai-dot"/><div className="ai-dot"/></div>
+          <div>
+            <div className="fsm fw5 fp">{inputMode==='image'?'Reading visual signals…':'Extracting behavioral signals…'}</div>
+            <div className="fxs fd mt4">{inputMode==='image'?'Analyzing body language, environment, lifestyle cues, and social context':'Analyzing tone, personality, content patterns, and lifestyle signals'}</div>
+          </div>
+        </div>
+      )}
+      {state==='error'&&err&&(<div className="card-danger mb16"><div className="fxs fr fw5 mb4">Analysis failed</div><div className="fxs fd">{err}</div></div>)}
+    </div>
+  );
+}
+
+/* ══ ADD / EDIT ═════════════════════════════════════════ */
+function AddEdit({initial,onSave,onCancel}){
+  const isEdit=!!initial;
+  const[name,setName]=useState(initial?.name||'');const[type,setType]=useState(initial?.type||'Friendship');const[color,setColor]=useState(initial?.color||COLORS[0]);
+  const[scores,setScores]=useState(initial?.scores||{trustworthiness:5,reliability:5,emotional_stability:5,energy_impact:5,growth_contribution:5,integrity:5,competence:5,respect:5});
+  const[digital,setDigital]=useState(initial?.digital||{has_data:false,mode:'manual',social_tone:5,content_quality:5,online_offline_consistency:5,lifestyle_signals:5,network_quality:5});
+  const[rfl,setRfl]=useState(new Set(initial?.red_flags||[]));const[gfl,setGfl]=useState(new Set(initial?.green_flags||[]));const[pats,setPats]=useState(new Set(initial?.patterns||[]));
+  const[ti,setTi]=useState(initial?.time_investment||{hours_per_month:0,value_received:5,value_given:5,emotional_cost:5});
+  const[notes,setNotes]=useState(initial?.notes||'');const[sec,setSec]=useState('core');
+  const toggleF=(set,fn,v)=>{const c=new Set(set);c.has(v)?c.delete(v):c.add(v);fn(c);};
+  const topW=Object.entries(W[type]||W.Friendship).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k])=>k);
+  const prevSc=useMemo(()=>calcScore({type,scores,digital,interactions:initial?.interactions||[],red_flags:[...rfl],green_flags:[...gfl],patterns:[...pats]}),[type,scores,digital,rfl,gfl,pats]);
+  const handleSave=()=>{if(!name.trim())return alert('Please enter a name.');const now=new Date().toISOString();onSave({id:initial?.id||uid(),name:name.trim(),type,color,scores,digital,red_flags:[...rfl],green_flags:[...gfl],patterns:[...pats],interactions:initial?.interactions||[],time_investment:ti,notes,created:initial?.created||now,updated:now});};
+  const SECS=[{k:'core',l:'Profile'},{k:'dimensions',l:'Scores'},{k:'digital',l:'Digital'},{k:'flags',l:'Flags & Patterns'}];
+  return(
+    <div>
+      <div className="breadcrumb"><span className="blink" onClick={onCancel}>Dashboard</span><span className="bsep">/</span><span className="bcur">{isEdit?`Edit — ${initial.name}`:'Add Person'}</span></div>
+      <div className="fl fli g16 mb20"><div style={{width:52,height:52,borderRadius:13,background:`${color}18`,color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:17,fontWeight:600,flexShrink:0}}>{name?initials(name):'?'}</div><div><div className="fw6" style={{fontSize:18,marginBottom:2}}>{name||'New Person'}</div><div className="fxs fd">Preview: <span className="fm fw5" style={{color:sColor(prevSc)}}>{prevSc}</span>/100 — <span style={{color:getRiskLevel({type,scores,digital,red_flags:[...rfl],green_flags:[...gfl],patterns:[...pats],interactions:[]}).color}}>{getRiskLevel({type,scores,digital,red_flags:[...rfl],green_flags:[...gfl],patterns:[...pats],interactions:[]}).label} Risk</span></div></div></div>
+      <div className="tab-bar mb16">{SECS.map(s=><button key={s.k} className={`ptab${sec===s.k?' on':''}`} onClick={()=>setSec(s.k)}>{s.l}</button>)}</div>
+      {sec==='core'&&(<div className="two-col"><div><div className="fgroup"><label className="flabel">Name</label><input className="fg-inp" value={name} onChange={e=>setName(e.target.value)} placeholder="Full name"/></div><div className="fgroup"><label className="flabel">Relationship Type</label><select className="fg-sel" value={type} onChange={e=>setType(e.target.value)}>{REL_TYPES.map(t=><option key={t} value={t}>{t}</option>)}</select><div className="fxs fd mt8">High-weight: {topW.map(k=>DIMS.find(d=>d.key===k)?.label).join(' · ')}</div></div><div className="fgroup"><label className="flabel">Avatar Color</label><div className="fl g8 flw">{COLORS.map(c=><div key={c} className={`cswatch${color===c?' on':''}`} style={{background:c}} onClick={()=>setColor(c)}/>)}</div></div><div className="fgroup"><label className="flabel">Notes</label><textarea className="fg-ta" value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Context, history, key observations..."/></div></div><div><div className="fgroup"><label className="flabel">Time & Effort Investment</label><div className="form-section">{[{k:'hours_per_month',l:'Hours per month',min:0,max:100},{k:'value_received',l:'Value received (1-10)',min:1,max:10},{k:'value_given',l:'Value given (1-10)',min:1,max:10},{k:'emotional_cost',l:'Emotional cost (1-10)',min:1,max:10}].map(({k,l,min,max})=>(<div key={k} style={{marginBottom:'.9rem'}}><div className="fl fli flb mb6"><span className="fxs fd">{l}</span><span className="fm fxs fg">{ti[k]}</span></div><input type="range" min={min} max={max} step="1" value={ti[k]} onChange={e=>setTi(v=>({...v,[k]:+e.target.value}))}/></div>))}</div></div></div></div>)}
+      {sec==='dimensions'&&(<div className="two-col"><div><label className="flabel" style={{marginBottom:'1rem'}}>Core Dimensions <span className="fg" style={{textTransform:'none',letterSpacing:0}}>★ = high weight for {type}</span></label>{DIMS.map(dd=>{const hw=(W[type]?.[dd.key]||1)>=1.8;return(<div key={dd.key} style={{marginBottom:'1rem'}}><div className="fl fli flb mb6"><span className="fsm" style={{color:hw?'var(--gold)':'var(--text2)'}}>{dd.label}{hw?' ★':''}</span><span className="fm fxs fg">{scores[dd.key]}</span></div><input type="range" min="1" max="10" step="1" value={scores[dd.key]} onChange={e=>setScores(s=>({...s,[dd.key]:+e.target.value}))}/></div>);})}</div><div><label className="flabel" style={{marginBottom:'.75rem'}}>Live Preview</label>{DIMS.map(dd=><DimBar key={dd.key} label={dd.label} value={scores[dd.key]??5} highlight={topW.includes(dd.key)}/>)}<div className="card mt16"><div className="fxs fd mb4">Projected score</div><div className="fm fw6" style={{fontSize:24,color:sColor(prevSc)}}>{prevSc}/100</div></div></div></div>)}
+      {sec==='digital'&&(<div>
+        <div className="fl fli flb mb20"><div><div className="fw5 mb4">Digital Presence Layer</div><div className="fsm fd">Blends at 35% weight. AI analysis auto-fills scores from pasted content.</div></div><button className={`btn${digital.has_data?' btnp':''} btnsm`} onClick={()=>setDigital(d=>({...d,has_data:!d.has_data}))}>{digital.has_data?'Enabled — Disable':'Enable Digital Layer'}</button></div>
+        {digital.has_data&&(<div>
+          <div className="fgroup"><label className="flabel">Input Method</label><div className="mode-toggle"><button className={`mode-btn${(digital.mode||'manual')==='manual'?' on':''}`} onClick={()=>setDigital(d=>({...d,mode:'manual'}))}>⊟ Manual Input</button><button className={`mode-btn${digital.mode==='ai'?' on-ai':''}`} onClick={()=>setDigital(d=>({...d,mode:'ai'}))}>◈ AI Analyze</button></div><div className="fxs fd mt8">{(digital.mode||'manual')==='manual'?'Set scores manually using sliders.':'Paste content — AI extracts signals and auto-fills. All values stay editable.'}</div></div>
+          {digital.mode==='ai'&&<DigitalAIPanel digital={digital} setDigital={setDigital}/>}
+          {(digital.mode||'manual')==='manual'&&(<div className="two-col"><div>{DIGITAL_DIMS.map(dd=>(<div key={dd.key} style={{marginBottom:'1rem'}}><div className="fl fli flb mb6"><span className="fsm fd">{dd.label}</span><span className="fm fxs fg">{digital[dd.key]??5}</span></div><input type="range" min="1" max="10" step="1" value={digital[dd.key]??5} onChange={e=>setDigital(v=>({...v,[dd.key]:+e.target.value}))}/></div>))}</div><div><label className="flabel" style={{marginBottom:'.75rem'}}>Digital Preview</label>{DIGITAL_DIMS.map(dd=><DimBar key={dd.key} label={dd.label} value={digital[dd.key]??5}/>)}{(digital.online_offline_consistency??5)<5&&(<div className="card-danger mt16"><div className="fxs fr fw5 mb4">Consistency Gap Active</div><div className="fxs fd">Penalty: −{(5-(digital.online_offline_consistency??5))*3} pts.</div></div>)}</div></div>)}
+          {digital.mode==='ai'&&digital.ai_result&&(<div style={{marginTop:'1.25rem'}}><div className="ai-result-header"><div className="fl fli g12"><span className="ai-badge">◈ AI-GENERATED</span><span className="fxs fd">Scores auto-filled · All editable</span></div><div className="fl g8 fli"><span className={`conf-badge ${digital.ai_result.data_quality==='strong'?'hi':digital.ai_result.data_quality==='moderate'?'med':'lo'}`}>{digital.ai_result.data_quality}</span><span className={`conf-badge ${confClass(digital.ai_result.overall_confidence)}`}>{digital.ai_result.overall_confidence}</span></div></div><div className="two-col"><div><label className="flabel" style={{marginBottom:'1rem'}}>AI-filled scores — editable</label>{DIGITAL_DIMS.map(dd=>{const conf=digital.ai_result?.confidence?.[dd.key],reason=digital.ai_result?.reasoning?.[dd.key];return(<div key={dd.key} className="ai-score-row"><div className="ai-dim-header"><div><div className="fsm fd mb4">{dd.label}</div>{conf&&<span className={`conf-badge ${confClass(conf)}`}>{conf} conf</span>}</div><div className="fl fli g6"><span className="ai-badge">AI</span><span className="fm fxs fg">{digital[dd.key]??5}</span></div></div><input type="range" min="1" max="10" step="1" value={digital[dd.key]??5} onChange={e=>setDigital(v=>({...v,[dd.key]:+e.target.value}))}/>{reason&&<div className="fxs fd mt6" style={{lineHeight:1.55,opacity:.8}}>{reason}</div>}</div>);})}</div><div>{digital.ai_result?.manual_snapshot&&(()=>{const gaps=DIGITAL_DIMS.filter(dd=>Math.abs((digital.ai_result.manual_snapshot[dd.key]??5)-(digital.ai_result.scores?.[dd.key]??5))>=2);return gaps.length>0?(<div className="mb16"><div className="sec-title">Perception Gap</div>{gaps.map(dd=>{const man=digital.ai_result.manual_snapshot[dd.key]??5,ai=digital.ai_result.scores?.[dd.key]??5,diff=Math.abs(man-ai);return(<div key={dd.key} className="bias-warn"><div className="fxs fo fw5 mb4">⚠ {dd.label}</div><div className="fl g8 fli mb4"><span className="fxs fd">Your input: <span className="fm">{man}/10</span></span><span className="fxs fd">AI reading: <span className="fm" style={{color:'#9060e0'}}>{ai}/10</span></span></div><div className="fxs fo">Significant difference ({diff} pts). Your direct knowledge overrides the AI — adjust slider if needed.</div></div>);})})</div>):null;})()}{digital.ai_result.signals&&(<div className="signal-box mb12"><div className="fl fli flb mb10"><span className="fxs fg fw5">Extracted Signals</span><span className="ai-badge">AI</span></div>{[{l:'Tone',v:digital.ai_result.signals.tone_summary},{l:'Content',v:digital.ai_result.signals.content_type},{l:'Authenticity',v:digital.ai_result.signals.consistency_pattern},{l:'Environment',v:digital.ai_result.signals.environment_quality}].map(({l,v})=>v&&(<div key={l} className="fl fli flb mb6"><span className="fxs fd">{l}</span><span className="fxs fm" style={{color:'var(--text)',textTransform:'capitalize'}}>{v}</span></div>))}{(digital.ai_result.signals.personality_indicators||[]).length>0&&(<div className="mt8 pt8" style={{borderTop:'1px solid var(--border)'}}><div className="fxs fd mb6">Personality indicators</div><div className="fl g4 flw">{digital.ai_result.signals.personality_indicators.map((p,i)=><span key={i} className="tag tag-b on" style={{fontSize:10}}>{p}</span>)}</div></div>)}</div>)}{(digital.ai_result.warnings||[]).length>0&&(<div className="card mb8" style={{borderColor:'rgba(144,96,224,.2)'}}><div className="fxs fw5 mb6" style={{color:'#9060e0'}}>Could not determine</div>{digital.ai_result.warnings.map((w,i)=><div key={i} className="fxs fd mb4">· {w}</div>)}</div>)}{(digital.ai_result.assumptions||[]).length>0&&(<div className="card-warn"><div className="fxs fg fw5 mb6">Assumptions</div>{digital.ai_result.assumptions.map((a,i)=><div key={i} className="fxs fd mb4">· {a}</div>)}</div>)}</div></div></div>)}
+        </div>)}
+      </div>)}
+      {sec==='flags'&&(<div><div className="two-col mb20"><div><div className="fgroup"><label className="flabel">Red Flags (−5 pts each)</label><div className="tags-row">{RED_FLAGS.map(f=><span key={f} className={`tag tag-r${rfl.has(f)?' on':''}`} onClick={()=>toggleF(rfl,setRfl,f)}>{f}</span>)}</div></div></div><div><div className="fgroup"><label className="flabel">Green Flags (+1.5 pts each)</label><div className="tags-row">{GREEN_FLAGS.map(f=><span key={f} className={`tag tag-g${gfl.has(f)?' on':''}`} onClick={()=>toggleF(gfl,setGfl,f)}>{f}</span>)}</div></div></div></div><div><div className="fgroup"><label className="flabel">Behavioral Patterns (−3.5 pts each)</label><div className="pattern-grid">{BEHAVIORAL_PATTERNS.map(p=><div key={p} className={`tag tag-b${pats.has(p)?' on':''}`} style={{fontSize:11.5}} onClick={()=>toggleF(pats,setPats,p)}>{p}</div>)}</div></div></div></div>)}
+      <div className="fl g12 mt16"><button className="btn btnp" onClick={handleSave}>{isEdit?'Save Changes':'Add Person'}</button><button className="btn" onClick={onCancel}>Cancel</button></div>
+    </div>
+  );
+}
+
+/* ══ LOG INTERACTION ════════════════════════════════════ */
+function LogInteraction({person,onSave,onCancel}){
+  const[summary,setSummary]=useState('');const[feeling,setFeeling]=useState('neutral');const[value,setValue]=useState('neutral');const[tone,setTone]=useState('neutral');const[depth,setDepth]=useState('moderate');const[effort,setEffort]=useState('medium');const[timeSp,setTimeSp]=useState(30);const[date,setDate]=useState(new Date().toISOString().split('T')[0]);const[flags,setFlags]=useState(new Set());const[addR,setAddR]=useState(new Set());const[addG,setAddG]=useState(new Set());
+  const toggleS=(set,fn,v)=>{const c=new Set(set);c.has(v)?c.delete(v):c.add(v);fn(c);};
+  const handleSave=()=>{if(!summary.trim())return alert('Please describe the interaction.');onSave({id:uid(),date:new Date(date).toISOString(),summary:summary.trim(),feeling,value,tone,depth,effort,time_spent:timeSp,flags:[...flags]},[...addR],[...addG]);};
+  const Sel=({val,label,color,active,onClick})=>(<button className="sel-btn" onClick={onClick} style={{border:`1px solid ${active?color+'55':'var(--border)'}`,background:active?`${color}14`:'transparent',color:active?color:'var(--text2)'}}>{label}</button>);
+  const iC=(f,v)=>{const pos={feeling:'positive',value:'added',tone:'supportive',depth:'deep',effort:'high'},neg={feeling:'negative',value:'drained',tone:'manipulative',depth:'surface',effort:'low'};if(v===pos[f])return'#4dbf72';if(v===neg[f])return'#e85555';return'#6a6a8a';};
+  const iV=(f,v)=>{const pV={feeling:'+1.5',value:'+2.5',tone:'+2.0',depth:'+1.2',effort:'+1.5'},nV={feeling:'−2.0',value:'−3.5',tone:'−3.0',depth:'−0.6',effort:'−1.2'},pos={feeling:'positive',value:'added',tone:'supportive',depth:'deep',effort:'high'},neg={feeling:'negative',value:'drained',tone:'manipulative',depth:'surface',effort:'low'};if(v===pos[f])return pV[f];if(v===neg[f])return nV[f];return'0.0';};
+  return(
+    <div>
+      <div className="breadcrumb"><span className="blink" onClick={onCancel}>Dashboard</span><span className="bsep">/</span><span className="blink" onClick={onCancel}>{person.name}</span><span className="bsep">/</span><span className="bcur">Log Interaction</span></div>
+      <div className="fl fli g12 mb20"><div style={{width:44,height:44,borderRadius:11,background:`${person.color}18`,color:person.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:600,flexShrink:0}}>{initials(person.name)}</div><div><div className="fw5" style={{fontSize:15}}>{person.name}</div><div className="fxs fd">Each log updates score, trend, and pattern detection</div></div></div>
+      <div className="two-col">
+        <div>
+          <div className="fgroup"><label className="flabel">Date</label><input type="date" className="fg-inp" value={date} onChange={e=>setDate(e.target.value)}/></div>
+          <div className="fgroup"><label className="flabel">What happened?</label><textarea className="fg-ta" style={{minHeight:120}} value={summary} onChange={e=>setSummary(e.target.value)} placeholder="Describe what happened, what was said, how you felt. More detail = better pattern analysis."/></div>
+          <div className="fgroup"><label className="flabel">Time Spent</label><div className="fl fli g12"><input type="range" min="0" max="240" step="5" value={timeSp} onChange={e=>setTimeSp(+e.target.value)} style={{flex:1}}/><span className="fm fxs fg" style={{minWidth:40}}>{fmtMins(timeSp)}</span></div></div>
+          <div className="fgroup"><label className="flabel">Red Flags in This Interaction</label><div className="tags-row">{RED_FLAGS.map(f=><span key={f} className={`tag tag-r${flags.has(f)?' on':''}`} onClick={()=>toggleS(flags,setFlags,f)}>{f}</span>)}</div></div>
+          <div className="fgroup"><label className="flabel">Add to Profile — Red Flags</label><div className="tags-row">{RED_FLAGS.filter(f=>!(person.red_flags||[]).includes(f)).map(f=><span key={f} className={`tag tag-r${addR.has(f)?' on':''}`} onClick={()=>toggleS(addR,setAddR,f)}>{f}</span>)}</div></div>
+          <div className="fgroup"><label className="flabel">Add to Profile — Green Flags</label><div className="tags-row">{GREEN_FLAGS.filter(f=>!(person.green_flags||[]).includes(f)).map(f=><span key={f} className={`tag tag-g${addG.has(f)?' on':''}`} onClick={()=>toggleS(addG,setAddG,f)}>{f}</span>)}</div></div>
+        </div>
+        <div>
+          <div className="fgroup"><label className="flabel">How did you feel afterward?</label><div className="fl g8">{[{v:'positive',l:'Positive',c:'#4dbf72'},{v:'neutral',l:'Neutral',c:'#6a6a8a'},{v:'negative',l:'Negative',c:'#e85555'}].map(o=><Sel key={o.v} val={o.v} label={o.l} color={o.c} active={feeling===o.v} onClick={()=>setFeeling(o.v)}/>)}</div></div>
+          <div className="fgroup"><label className="flabel">Energy Exchange</label><div className="fl g8">{[{v:'added',l:'Added Value',c:'#4dbf72'},{v:'neutral',l:'Neutral',c:'#6a6a8a'},{v:'drained',l:'Drained Energy',c:'#e85555'}].map(o=><Sel key={o.v} val={o.v} label={o.l} color={o.c} active={value===o.v} onClick={()=>setValue(o.v)}/>)}</div></div>
+          <div className="fgroup"><label className="flabel">Their Tone</label><div className="fl flw g6">{[{v:'supportive',l:'Supportive',c:'#4dbf72'},{v:'respectful',l:'Respectful',c:'#2ecc9a'},{v:'neutral',l:'Neutral',c:'#6a6a8a'},{v:'dismissive',l:'Dismissive',c:'#d97840'},{v:'manipulative',l:'Manipulative',c:'#e85555'}].map(o=><Sel key={o.v} val={o.v} label={o.l} color={o.c} active={tone===o.v} onClick={()=>setTone(o.v)}/>)}</div></div>
+          <div className="fgroup"><label className="flabel">Conversation Depth</label><div className="fl g6 flw">{[{v:'surface',l:'Surface',c:'#6a6a8a'},{v:'moderate',l:'Moderate',c:'#2ecc9a'},{v:'meaningful',l:'Meaningful',c:'#9060e0'},{v:'deep',l:'Deep',c:'#4dbf72'}].map(o=><Sel key={o.v} val={o.v} label={o.l} color={o.c} active={depth===o.v} onClick={()=>setDepth(o.v)}/>)}</div></div>
+          <div className="fgroup"><label className="flabel">Their Effort Level</label><div className="fl g8">{[{v:'low',l:'Low',c:'#e85555'},{v:'medium',l:'Medium',c:'#6a6a8a'},{v:'high',l:'High',c:'#4dbf72'}].map(o=><Sel key={o.v} val={o.v} label={o.l} color={o.c} active={effort===o.v} onClick={()=>setEffort(o.v)}/>)}</div></div>
+          <div className="card" style={{background:'rgba(201,170,113,0.05)',borderColor:'var(--border-gold)'}}><div className="fxs fg fw5 mb8">Score impact</div>{[{k:'feeling',v:feeling},{k:'value',v:value},{k:'tone',v:tone},{k:'depth',v:depth},{k:'effort',v:effort}].map(({k,v})=>(<div key={k} className="fl fli flb mb4"><span className="fxs fd" style={{textTransform:'capitalize'}}>{k}</span><span className="fm fxs fw5" style={{color:iC(k,v)}}>{iV(k,v)}</span></div>))}</div>
+        </div>
+      </div>
+      <div className="fl g12 mt16"><button className="btn btnp" onClick={handleSave}>Save Interaction</button><button className="btn" onClick={onCancel}>Cancel</button></div>
+    </div>
+  );
+}
+
+function ConfirmModal({name,onConfirm,onCancel}){
+  return(<div className="modal-overlay"><div className="modal"><div className="fw6 mb8" style={{fontSize:16}}>Remove {name}?</div><div className="fsm fd mb20">Permanently deletes this profile, all interactions, and scores.</div><div className="fl g12"><button className="btn btnd" onClick={onConfirm}>Remove</button><button className="btn" onClick={onCancel}>Cancel</button></div></div></div>);
+}
+
+/* ══ AUTH SCREEN ════════════════════════════════════════ */
+function AuthScreen({onSuccess}){
+  const[mode,setMode]=useState('login');const[email,setEmail]=useState('');const[pw,setPw]=useState('');const[loading,setLoading]=useState(false);const[err,setErr]=useState(null);const[ok,setOk]=useState(null);
+  const handle=async()=>{
+    if(!email.trim()||!pw.trim())return setErr('Please enter email and password.');
+    setLoading(true);setErr(null);setOk(null);
+    try{
+      if(mode==='login'){const{error}=await dbSignIn(email,pw);if(error)throw error;onSuccess();}
+      else{const{error}=await dbSignUp(email,pw);if(error)throw error;setOk('Account created! You can now log in.');}
+    }catch(e){setErr(e.message || 'Connection failed. Check your Supabase URL and key.');}
+    setLoading(false);
+  };
+  const handleReset=async()=>{
+    if(!email.trim())return setErr('Enter your email above first.');
+    setLoading(true);setErr(null);
+    const{error}=await dbResetPassword(email);
+    if(error)setErr(error.message);else setOk('Password reset email sent. Check your inbox.');
+    setLoading(false);
+  };
+  return(
+    <div className="auth-wrap">
+      <div className="auth-card">
+        <div className="auth-logo">
+          <div className="logobadge"><svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="var(--gold)" strokeWidth="1.4"><polygon points="8,1.5 14.5,5 14.5,11 8,14.5 1.5,11 1.5,5"/><circle cx="8" cy="8" r="2.2" fill="var(--gold)" stroke="none"/></svg></div>
+          <div><div style={{fontWeight:600,fontSize:16,letterSpacing:'.01em'}}>Relationship Intelligence</div><div style={{fontSize:10,color:'var(--text2)',textTransform:'uppercase',letterSpacing:'.09em',marginTop:1}}>Psychology-grade behavioral analysis</div></div>
+        </div>
+        <div className="auth-tabs"><button className={`auth-tab${mode==='login'?' on':''}`} onClick={()=>{setMode('login');setErr(null);setOk(null);}}>Log In</button><button className={`auth-tab${mode==='signup'?' on':''}`} onClick={()=>{setMode('signup');setErr(null);setOk(null);}}>Create Account</button></div>
+        {err&&<div className="auth-err">{err}</div>}
+        {ok&&<div className="auth-ok">{ok}</div>}
+        <div className="fgroup"><label className="flabel">Email</label><input className="fg-inp" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" onKeyDown={e=>e.key==='Enter'&&handle()}/></div>
+        <div className="fgroup"><label className="flabel">Password</label><input className="fg-inp" type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder={mode==='signup'?'Min 6 characters':'Your password'} onKeyDown={e=>e.key==='Enter'&&handle()}/></div>
+        <button className="btn btnp" style={{width:'100%',justifyContent:'center',padding:'.65rem',fontSize:14,opacity:loading?.6:1}} onClick={handle} disabled={loading}>{loading?'Please wait…':mode==='login'?'Log In →':'Create Account →'}</button>
+        {mode==='login'&&<div className="auth-hint"><span style={{cursor:'pointer',color:'var(--gold)',textDecoration:'underline',textDecorationColor:'rgba(201,170,113,.3)'}} onClick={handleReset}>Forgot password?</span></div>}
+        <div className="auth-hint">{mode==='login'?'Don\'t have an account? ':' Already have an account? '}<span style={{cursor:'pointer',color:'var(--gold)'}} onClick={()=>{setMode(mode==='login'?'signup':'login');setErr(null);setOk(null);}}>{mode==='login'?'Sign up free':'Log in'}</span></div>
+      </div>
+    </div>
+  );
+}
+
+/* ══ SETUP SCREEN ═══════════════════════════════════════ */
+function SetupScreen(){
+  return(
+    <div className="auth-wrap">
+      <div className="auth-card">
+        <div className="auth-logo">
+          <div className="logobadge"><svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="var(--gold)" strokeWidth="1.4"><polygon points="8,1.5 14.5,5 14.5,11 8,14.5 1.5,11 1.5,5"/><circle cx="8" cy="8" r="2.2" fill="var(--gold)" stroke="none"/></svg></div>
+          <div><div style={{fontWeight:600,fontSize:16}}>Setup Required</div><div style={{fontSize:10,color:'var(--text2)',textTransform:'uppercase',letterSpacing:'.09em',marginTop:1}}>Relationship Intelligence</div></div>
+        </div>
+        <div className="card-warn mb16"><div className="fxs fg fw5 mb8">⚙ Supabase credentials not configured</div><div className="fsm fd" style={{lineHeight:1.7}}>Open <span className="fm" style={{color:'var(--text)'}}>index.html</span> in a text editor and replace the two placeholder values at the top of the file with your Supabase URL and anon key. See <span className="fm" style={{color:'var(--text)'}}>SETUP_GUIDE.md</span> for step-by-step instructions.</div></div>
+        <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,padding:'.875rem 1rem',fontFamily:'var(--mono)',fontSize:12,lineHeight:2,color:'var(--text2)'}}>
+          <div><span style={{color:'#2ecc9a'}}>const</span> <span style={{color:'var(--text)'}}>SUPABASE_URL</span> = <span style={{color:'#4dbf72'}}>'https://cwoyplcokcnsfqglluaa.supabase.co'</span>;</div>
+          <div><span style={{color:'#2ecc9a'}}>const</span> <span style={{color:'var(--text)'}}>SUPABASE_ANON_KEY</span> = <span style={{color:'#4dbf72'}}>'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3b3lwbGNva2Nuc2ZxZ2xsdWFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMDQ0MDAsImV4cCI6MjA4OTY4MDQwMH0.e0stEGYLAhjU8dJuMrE2Duv3Pl7SB4Er02dUITIa6aQ'</span>;</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══ SPLASH ══════════════════════════════════════════════ */
+function SplashScreen(){
+  return(<div className="splash"><div className="splash-ring"/><div style={{fontSize:13,color:'var(--text2)'}}>Loading…</div></div>);
+}
+
+/* ══ QUICK RATE ══════════════════════════════════════════ */
+function StarRating({value,onChange}){
+  const[hover,setHover]=useState(0);
+  const display=hover||value;
+  return(
+    <div>
+      <div className="fl fli" style={{justifyContent:'center',gap:4,padding:'1rem 0',userSelect:'none'}}>
+        {[1,2,3,4,5].map(s=>{
+          const full=display>=s,half=!full&&display>=s-0.5;
+          return(
+            <div key={s} style={{position:'relative',width:44,height:44,cursor:'pointer'}}
+              onMouseLeave={()=>setHover(0)}
+              onClick={e=>{
+                const rect=e.currentTarget.getBoundingClientRect();
+                const x=e.clientX-rect.left;
+                onChange(x<rect.width/2?s-0.5:s);
+              }}
+              onMouseMove={e=>{
+                const rect=e.currentTarget.getBoundingClientRect();
+                const x=e.clientX-rect.left;
+                setHover(x<rect.width/2?s-0.5:s);
+              }}
+              onTouchEnd={e=>{
+                e.preventDefault();
+                const touch=e.changedTouches[0];
+                const rect=e.currentTarget.getBoundingClientRect();
+                const x=touch.clientX-rect.left;
+                onChange(x<rect.width/2?s-0.5:s);
+              }}
+            >
+              <span style={{fontSize:38,position:'absolute',top:0,left:0,filter:'grayscale(1) opacity(0.2)'}}>⭐</span>
+              {(full||half)&&(
+                <span style={{fontSize:38,position:'absolute',top:0,left:0,clipPath:half?'inset(0 50% 0 0)':'none'}}>⭐</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {value>0&&(
+        <div style={{textAlign:'center',color:'var(--gold)',fontSize:16,fontWeight:600,marginTop:4}}>
+          {value}★ — {value>=5?'Excellent':value>=4?'Good':value>=3?'Okay':value>=2?'Bad':'Very Bad'}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function QuickRate({onSave,onCancel}){
+  const[name,setName]=useState('');
+  const[type,setType]=useState('Business');
+  const[stars,setStars]=useState(0);
+  const[hovered,setHovered]=useState(0);
+  const[vibe,setVibe]=useState('');
+  const[note,setNote]=useState('');
+  const[color,setColor]=useState(COLORS[0]);
+  const[tripTime,setTripTime]=useState('');
+  const[tripDist,setTripDist]=useState('');
+  const[tripEarning,setTripEarning]=useState('');
+  const[tripNo,setTripNo]=useState('');
+  const[tripFrom,setTripFrom]=useState('');
+  const[tripTo,setTripTo]=useState('');
+  // AI note analysis state
+  const[aiState,setAiState]=useState('idle'); // idle | loading | done | error
+  const[aiResult,setAiResult]=useState(null);
+
+  const vibes=[
+    {k:'great',l:'🌟 Great',feeling:'positive',value:'added',tone:'supportive'},
+    {k:'pleasant',l:'😊 Pleasant',feeling:'positive',value:'added',tone:'respectful'},
+    {k:'neutral',l:'😐 Neutral',feeling:'neutral',value:'neutral',tone:'neutral'},
+    {k:'draining',l:'😤 Draining',feeling:'negative',value:'drained',tone:'dismissive'},
+    {k:'rude',l:'😠 Rude',feeling:'negative',value:'drained',tone:'manipulative'},
+  ];
+
+  const starsLabel=s=>s>=5?'Excellent':s>=4.5?'Great':s>=4?'Good':s>=3.5?'Above Average':s>=3?'Okay':s>=2.5?'Below Average':s>=2?'Bad':s>=1.5?'Very Bad':s>=1?'Terrible':'';
+  const starsToScore=s=>Math.round(Math.max(1,Math.min(10,s*2)));
+  const display=hovered||stars;
+
+  const handleStarClick=(e,i)=>{const rect=e.currentTarget.getBoundingClientRect();const half=(e.clientX-rect.left)<rect.width/2;setStars(half?i-0.5:i);};
+  const handleStarHover=(e,i)=>{const rect=e.currentTarget.getBoundingClientRect();const half=(e.clientX-rect.left)<rect.width/2;setHovered(half?i-0.5:i);};
+
+  const NOTE_PROMPT=(n,s,v)=>`You are a behavioral analyst. A ride-share driver wrote this note about a passenger after a trip.
+
+Stars given: ${s}/5
+Vibe: ${v}
+Note: "${n}"
+
+Based ONLY on the note content, return this exact JSON (no markdown, no backticks):
+{
+  "score_adjustment": <integer from -20 to +20, how much to adjust the star-based score>,
+  "red_flags": [<from this list only: "Manipulation","Dishonesty","Disrespect","Victim mentality","Chronic negativity","Passive aggression","Lack of accountability","Energy-draining conversations","Boundary violations">],
+  "green_flags": [<from this list only: "Positive energy","Shows empathy","Respects limits","Consistent behavior","Inspires you","Respects your time","Takes responsibility">],
+  "tone": "<supportive|respectful|neutral|dismissive|manipulative>",
+  "feeling": "<positive|neutral|negative>",
+  "energy": "<added|neutral|drained>",
+  "depth": "<surface|moderate|meaningful|deep>",
+  "summary": "<one sentence behavioral insight about this person based on the note>",
+  "confidence": "<low|medium|high>"
+}
+Rules: Only use flags clearly supported by the note. Score adjustment: positive note contradicting low stars should raise score; negative note contradicting high stars should lower it. Return empty arrays if no clear flags.`;
+
+  const analyzeNote=async()=>{
+    if(!note.trim())return alert('Write a note first, then analyze it.');
+    setAiState('loading');setAiResult(null);
+    try{
+      const res=await fetch(AI_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:NOTE_PROMPT(note,stars||'?',vibe||'?')}]})});
+      if(!res.ok)throw new Error('API error '+res.status);
+      const data=await res.json();
+      const text=data.content.map(i=>i.text||'').join('');
+      const r=JSON.parse(text.replace(/```json|```/g,'').trim());
+      setAiResult(r);
+      setAiState('done');
+      // Auto-update vibe if AI strongly disagrees
+      if(r.energy==='drained'&&(vibe===''||vibe==='neutral'))setVibe('draining');
+      if(r.energy==='added'&&vibe==='')setVibe('pleasant');
+    }catch(e){setAiState('error');console.error(e);}
+  };
+
+  const handleSave=()=>{
+    if(!name.trim())return alert('Enter a name.');
+    if(!stars)return alert('Pick a star rating.');
+    if(!vibe)return alert('Pick a vibe.');
+    const baseSc=starsToScore(stars);
+    const adj=aiResult?.score_adjustment||0;
+    const sc=Math.max(1,Math.min(10,baseSc+Math.round(adj/10*2)));
+    const v=vibes.find(x=>x.k===vibe);
+    const feeling=aiResult?.feeling||v.feeling;
+    const energy=aiResult?.energy||v.value;
+    const tone=aiResult?.tone||v.tone;
+    const depth=aiResult?.depth||'surface';
+    const now=new Date().toISOString();
+    const parts=[];
+    if(tripTime)parts.push('Time: '+tripTime);
+    if(tripDist)parts.push('Distance: '+tripDist+' km');
+    if(tripEarning)parts.push('Earned: '+tripEarning+' JOD');
+    if(tripNo)parts.push('Trip #'+tripNo);
+    if(tripFrom)parts.push('From: '+tripFrom);
+    if(tripTo)parts.push('To: '+tripTo);
+    const tripSummary=parts.join(' · ');
+    const aiInsight=aiResult?.summary?` — AI: ${aiResult.summary}`:'';
+    const summary=`${stars}★ ${v.l}${tripSummary?' — '+tripSummary:''}${note?' — '+note:''}${aiInsight}`;
+    // Merge vibe flags with AI flags
+    const baseRF=vibe==='rude'?['Disrespect']:vibe==='draining'?['Energy-draining conversations']:[];
+    const baseGF=vibe==='great'?['Positive energy','Shows empathy']:vibe==='pleasant'?['Positive energy']:[];
+    const aiRF=aiResult?.red_flags||[];
+    const aiGF=aiResult?.green_flags||[];
+    const person={
+      id:uid(),name:name.trim(),type,color,
+      scores:{trustworthiness:sc,reliability:sc,emotional_stability:sc,energy_impact:sc,growth_contribution:Math.max(1,sc-2),integrity:sc,competence:sc,respect:sc},
+      digital:{has_data:false,mode:'manual',social_tone:5,content_quality:5,online_offline_consistency:5,lifestyle_signals:5,network_quality:5},
+      patterns:[],
+      red_flags:[...new Set([...baseRF,...aiRF])],
+      green_flags:[...new Set([...baseGF,...aiGF])],
+      interactions:[{id:uid(),date:now,summary,feeling,value:energy,tone,depth,effort:'medium',time_spent:tripDist?Math.round(parseFloat(tripDist)*2)||10:10,flags:[...new Set([...baseRF,...aiRF])]}],
+      time_investment:{hours_per_month:0,value_received:sc,value_given:5,emotional_cost:energy==='drained'?7:3},
+      notes:[note,tripSummary,aiResult?.summary].filter(Boolean).join('\n'),
+      trip_info:{time:tripTime,distance:tripDist,earning:tripEarning,trip_no:tripNo,from:tripFrom,to:tripTo},
+      ai_note_analysis:aiResult||null,
+      created:now,updated:now
+    };
+    onSave(person);
+  };
+
+  return(
+    <div>
+      <div className="breadcrumb"><span className="blink" onClick={onCancel}>Dashboard</span><span className="bsep">/</span><span className="bcur">Quick Rate</span></div>
+      <div style={{maxWidth:520,margin:'0 auto'}}>
+        <div style={{textAlign:'center',marginBottom:'1.5rem'}}>
+          <div className="fw6" style={{fontSize:22,marginBottom:6}}>Quick Rate</div>
+          <div className="fd fsm">Name → Trip info → Stars → Vibe → Done</div>
+        </div>
+
+        <div className="two-col" style={{marginBottom:'1rem'}}>
+          <div className="fgroup" style={{marginBottom:0}}>
+            <label className="flabel">Name</label>
+            <input className="fg-inp" style={{fontSize:16}} value={name} onChange={e=>setName(e.target.value)} placeholder="Passenger name" autoFocus/>
+          </div>
+          <div className="fgroup" style={{marginBottom:0}}>
+            <label className="flabel">Type</label>
+            <select className="fg-sel" value={type} onChange={e=>setType(e.target.value)}>{REL_TYPES.map(t=><option key={t}>{t}</option>)}</select>
+          </div>
+        </div>
+
+        <div className="card mb16" style={{background:'rgba(201,170,113,0.04)',borderColor:'var(--border-gold)'}}>
+          <div className="sec-title" style={{marginBottom:'.875rem'}}>Trip Information <span className="fd" style={{textTransform:'none',letterSpacing:0,fontFamily:'var(--font)',fontSize:12}}>optional</span></div>
+          <div className="two-col" style={{gap:'.75rem',marginBottom:'.75rem'}}>
+            <div><label className="flabel" style={{marginBottom:4}}>Time</label><input className="fg-inp" style={{fontSize:15}} value={tripTime} onChange={e=>setTripTime(e.target.value)} placeholder="e.g. 11:53 AM"/></div>
+            <div><label className="flabel" style={{marginBottom:4}}>Trip No.</label><input className="fg-inp" style={{fontSize:15}} value={tripNo} onChange={e=>setTripNo(e.target.value)} placeholder="e.g. 32419483"/></div>
+          </div>
+          <div className="two-col" style={{gap:'.75rem',marginBottom:'.75rem'}}>
+            <div><label className="flabel" style={{marginBottom:4}}>Distance (km)</label><input className="fg-inp" style={{fontSize:15}} value={tripDist} onChange={e=>setTripDist(e.target.value)} placeholder="e.g. 7.41"/></div>
+            <div><label className="flabel" style={{marginBottom:4}}>Earnings (JOD)</label><input className="fg-inp" style={{fontSize:15}} value={tripEarning} onChange={e=>setTripEarning(e.target.value)} placeholder="e.g. 2.02"/></div>
+          </div>
+          <div style={{marginBottom:'.75rem'}}><label className="flabel" style={{marginBottom:4}}>Pickup Location</label><input className="fg-inp" style={{fontSize:15}} value={tripFrom} onChange={e=>setTripFrom(e.target.value)} placeholder="Where did you pick them up?"/></div>
+          <div><label className="flabel" style={{marginBottom:4}}>Dropoff Location</label><input className="fg-inp" style={{fontSize:15}} value={tripTo} onChange={e=>setTripTo(e.target.value)} placeholder="Where did you drop them off?"/></div>
+        </div>
+
+        <div className="fgroup">
+          <label className="flabel">Rating</label>
+          <div className="fl fli" style={{justifyContent:'center',padding:'.75rem 0',gap:2}} onMouseLeave={()=>setHovered(0)}>
+            {[1,2,3,4,5].map(i=>{
+              const full=display>=i;const half=!full&&display>=i-0.5;
+              return(
+                <div key={i} style={{position:'relative',width:46,height:46,cursor:'pointer',fontSize:40,lineHeight:'46px',textAlign:'center'}}
+                  onClick={e=>handleStarClick(e,i)} onMouseMove={e=>handleStarHover(e,i)}>
+                  <span style={{opacity:.22}}>⭐</span>
+                  {(full||half)&&<span style={{position:'absolute',left:0,top:0,width:full?'100%':'50%',overflow:'hidden',display:'block'}}>⭐</span>}
+                </div>
+              );
+            })}
+          </div>
+          {display>0&&<div style={{textAlign:'center',color:'var(--gold)',fontSize:16,fontWeight:600,marginTop:2}}>{display} ★ — {starsLabel(display)}</div>}
+        </div>
+
+        <div className="fgroup">
+          <label className="flabel">How did they make you feel?</label>
+          <div className="fl g8 flw" style={{justifyContent:'center'}}>
+            {vibes.map(v=>(
+              <button key={v.k} onClick={()=>setVibe(v.k)} style={{padding:'10px 16px',borderRadius:10,border:`1px solid ${vibe===v.k?'rgba(201,170,113,.5)':'var(--border)'}`,background:vibe===v.k?'var(--gold-bg)':'var(--card)',color:vibe===v.k?'var(--gold)':'var(--text)',fontFamily:'var(--font)',fontSize:15,cursor:'pointer',transition:'all .15s'}}>{v.l}</button>
+            ))}
+          </div>
+        </div>
+
+        <div className="fgroup">
+          <label className="flabel">Note — describe how they were <span style={{color:'#9060e0',fontWeight:600}}>· AI reads this to adjust score</span></label>
+          <textarea className="fg-ta" style={{fontSize:15,minHeight:90}} value={note} onChange={e=>{setNote(e.target.value);if(aiState==='done')setAiState('idle');setAiResult(null);}} placeholder={"Write what happened — good or bad.\nExamples:\n• 'Very polite, asked about my day, tipped well'\n• 'Rude from the start, complained about route, slammed the door'\n• 'Quiet and respectful, no issues'"}/>
+          <div className="fl fli g12 mt8">
+            <button className="btn btnsm" style={{background:'rgba(144,96,224,.1)',borderColor:'rgba(144,96,224,.3)',color:'#9060e0',opacity:aiState==='loading'?.55:1}} onClick={analyzeNote} disabled={aiState==='loading'}>
+              {aiState==='loading'?'Reading note…':aiState==='done'?'↺ Re-analyze note':'◈ Analyze Note'}
+            </button>
+            {aiState==='done'&&<span className="fxs fg2">✓ Note analyzed — score adjusted</span>}
+            {aiState==='error'&&<span className="fxs fr">Analysis failed (no credits?) — stars + vibe used only</span>}
+          </div>
+
+          {aiState==='loading'&&(
+            <div className="ai-thinking mt8">
+              <div className="ai-dots"><div className="ai-dot"/><div className="ai-dot"/><div className="ai-dot"/></div>
+              <div><div className="fsm fw5 fp">Reading behavioral signals in your note…</div></div>
+            </div>
+          )}
+
+          {aiState==='done'&&aiResult&&(
+            <div style={{marginTop:'.875rem',background:'rgba(144,96,224,.07)',border:'1px solid rgba(144,96,224,.2)',borderRadius:10,padding:'.875rem 1rem'}}>
+              <div className="fl fli flb mb10">
+                <span className="ai-badge">◈ AI NOTE ANALYSIS</span>
+                <span className={`conf-badge ${confClass(aiResult.confidence)}`}>{aiResult.confidence} confidence</span>
+              </div>
+              {aiResult.summary&&<div className="fsm mb10" style={{lineHeight:1.6,color:'var(--text)'}}>{aiResult.summary}</div>}
+              <div className="fl fli flb mb8">
+                <span className="fxs fd">Score adjustment from note</span>
+                <span className="fm fw6" style={{color:aiResult.score_adjustment>0?'#4dbf72':aiResult.score_adjustment<0?'#e85555':'#6a6a8a',fontSize:15}}>{aiResult.score_adjustment>0?'+':''}{aiResult.score_adjustment} pts</span>
+              </div>
+              {aiResult.red_flags?.length>0&&(
+                <div className="mb8"><div className="fxs fd mb4">Red flags detected from note</div><div className="fl g4 flw">{aiResult.red_flags.map((f,i)=><span key={i} className="tag tag-r on" style={{fontSize:11}}>{f}</span>)}</div></div>
+              )}
+              {aiResult.green_flags?.length>0&&(
+                <div><div className="fxs fd mb4">Green flags detected from note</div><div className="fl g4 flw">{aiResult.green_flags.map((f,i)=><span key={i} className="tag tag-g on" style={{fontSize:11}}>{f}</span>)}</div></div>
+              )}
+              {aiResult.score_adjustment!==0&&(
+                <div className="fxs fd mt8" style={{fontStyle:'italic'}}>Stars gave {starsToScore(stars)}/10 base → note {aiResult.score_adjustment>0?'raised':'lowered'} it to {Math.max(1,Math.min(10,starsToScore(stars)+Math.round(aiResult.score_adjustment/10*2)))}/10</div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="fgroup">
+          <label className="flabel">Color</label>
+          <div className="fl g8 flw">{COLORS.map(c=><div key={c} className={`cswatch${color===c?' on':''}`} style={{background:c}} onClick={()=>setColor(c)}/>)}</div>
+        </div>
+
+        <div className="fl g12 mt16">
+          <button className="btn btnp" style={{flex:1,justifyContent:'center',padding:'.7rem',fontSize:16}} onClick={handleSave}>Save ✓</button>
+          <button className="btn" onClick={onCancel}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+/* ══ MAIN APP ════════════════════════════════════════════ */
+function MainApp({user,onSignOut}){
+  const[people,setPeople]=useState([]);
+  const[view,setView]=useState('dashboard');
+  const[activeId,setActiveId]=useState(null);
+  const[loaded,setLoaded]=useState(false);
+  const[confirmId,setConfirmId]=useState(null);
+  const[syncState,setSyncState]=useState('idle');
+  useEffect(()=>{loadData(user.id).then(d=>{setPeople(d&&Array.isArray(d)&&d.length>0?d:SAMPLES);setLoaded(true);});},[user.id]);
+  const saveRef=React.useRef(null);
+  useEffect(()=>{
+    if(!loaded)return;
+    setSyncState('syncing');clearTimeout(saveRef.current);
+    saveRef.current=setTimeout(async()=>{await saveData(people,user.id);setSyncState('synced');setTimeout(()=>setSyncState('idle'),2000);},1200);
+  },[people,loaded]);
+  const active=useMemo(()=>people.find(p=>p.id===activeId),[people,activeId]);
+  const confirmPerson=useMemo(()=>people.find(p=>p.id===confirmId),[people,confirmId]);
+  const go=(v,id=null)=>{setView(v);if(id)setActiveId(id);};
+  const back=()=>{setView('dashboard');setActiveId(null);};
+  const savePerson=p=>{setPeople(prev=>{const i=prev.findIndex(x=>x.id===p.id);return i>=0?prev.map(x=>x.id===p.id?p:x):[...prev,p];});setActiveId(p.id);setView('profile');};
+  const saveQuickRate=p=>{setPeople(prev=>[...prev,p]);setView('dashboard');};
+  const saveInteraction=(it,newR,newG)=>{setPeople(prev=>prev.map(p=>p.id!==activeId?p:{...p,interactions:[...(p.interactions||[]),it],red_flags:[...new Set([...(p.red_flags||[]),...newR])],green_flags:[...new Set([...(p.green_flags||[]),...newG])],updated:new Date().toISOString()}));setView('profile');};
+  const updatePatterns=pats=>{setPeople(prev=>prev.map(p=>p.id!==activeId?p:{...p,patterns:pats,updated:new Date().toISOString()}));};
+  const handleDelete=()=>{setPeople(prev=>prev.filter(p=>p.id!==confirmId));setConfirmId(null);setView('dashboard');setActiveId(null);};
+  const syncLabel=syncState==='syncing'?'Saving…':syncState==='synced'?'Saved':'';
+  return(
+    <div className="app">
+      <div className="hdr">
+        <div className="logo" onClick={back}>
+          <div className="logobadge"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="var(--gold)" strokeWidth="1.4"><polygon points="8,1.5 14.5,5 14.5,11 8,14.5 1.5,11 1.5,5"/><circle cx="8" cy="8" r="2.2" fill="var(--gold)" stroke="none"/></svg></div>
+          <div><div className="logotitle">Relationship Intelligence</div><div className="logosub">Behavioral System · v2.1</div></div>
+        </div>
+        <div className="fl fli g12">
+          {syncLabel&&<div className="fl fli g6"><div className={`sync-dot${syncState==='syncing'?' syncing':''}`}/><span className="fxs fd">{syncLabel}</span></div>}
+          {view!=='dashboard'&&view!=='add'&&view!=='quickrate'&&<button className="btn btnsm" onClick={back}>← Back</button>}
+          {view==='dashboard'&&<button className="btn btnsm" style={{background:'rgba(77,191,114,.1)',borderColor:'rgba(77,191,114,.3)',color:'var(--green)'}} onClick={()=>setView('quickrate')}>⭐ Quick Rate</button>}
+          {view==='dashboard'&&<button className="btn btnp btnsm" onClick={()=>go('add')}>+ Add</button>}
+          <button className="btn btnsm" style={{color:'var(--text2)',fontSize:11}} onClick={onSignOut} title={user.email}>Sign Out</button>
+        </div>
+      </div>
+      <div className="main">
+        {!loaded&&<SplashScreen/>}
+        {loaded&&view==='dashboard'&&<Dashboard people={people} onSelect={id=>go('profile',id)} onAdd={()=>go('add')}/>}
+        {loaded&&view==='profile'&&active&&<Profile person={active} onBack={back} onEdit={()=>setView('edit')} onLog={()=>setView('log')} onAskDelete={()=>setConfirmId(activeId)} onUpdatePatterns={updatePatterns} onSaveDefense={(correctedScore,situation,result)=>{setPeople(prev=>prev.map(p=>p.id!==activeId?p:{...p,scores:{...p.scores,...Object.fromEntries(Object.entries(result.category_scores||{}).map(([k,v])=>[k.replace('_and_','_').replace('respect_and_boundaries','respect'),v.score]))},defense_log:[...((p.defense_log||[])),{date:new Date().toISOString(),situation,initial_score:sc,corrected_score:correctedScore,result}],notes:p.notes?p.notes+'\n\n[Defense] '+situation:'[Defense] '+situation,updated:new Date().toISOString()}));}}/>}
+        {loaded&&view==='add'&&<AddEdit initial={null} onSave={savePerson} onCancel={back}/>}
+        {loaded&&view==='edit'&&active&&<AddEdit initial={active} onSave={savePerson} onCancel={()=>setView('profile')}/>}
+        {loaded&&view==='log'&&active&&<LogInteraction person={active} onSave={saveInteraction} onCancel={()=>setView('profile')}/>}
+        {loaded&&view==='quickrate'&&<QuickRate onSave={saveQuickRate} onCancel={back}/>}
+      </div>
+      <div style={{borderTop:'1px solid var(--border)',padding:'.75rem 0',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0,paddingBottom:'calc(.75rem + var(--safe-bot))'}}>
+        <span className="fxs fd">Data syncs across all your devices · AI-powered digital analysis</span>
+        <span className="fxs fm fd">v2.1 · {user.email}</span>
+      </div>
+      {confirmId&&confirmPerson&&<ConfirmModal name={confirmPerson.name} onConfirm={handleDelete} onCancel={()=>setConfirmId(null)}/>}
+    </div>
+  );
+}
+
+/* ══ ROOT APP ════════════════════════════════════════════ */
+function App(){
+  const[user,setUser]=useState(null);const[authChecked,setAuthChecked]=useState(false);
+  useEffect(()=>{
+    if(!isConfigured){setAuthChecked(true);return;}
+    sb.auth.getSession().then(({data:{session}})=>{setUser(session?.user??null);setAuthChecked(true);});
+    const{data:{subscription}}=sb.auth.onAuthStateChange((_,session)=>{setUser(session?.user??null);});
+    return()=>subscription.unsubscribe();
+  },[]);
+  if(!isConfigured)return<SetupScreen/>;
+  if(!authChecked)return<SplashScreen/>;
+  if(!user)return<AuthScreen onSuccess={()=>sb.auth.getSession().then(({data:{session}})=>setUser(session?.user??null))}/>;
+  return<MainApp user={user} onSignOut={async()=>{await dbSignOut();setUser(null);}}/>;
+}
+
+createRoot(document.getElementById('root')).render(<App/>);
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
