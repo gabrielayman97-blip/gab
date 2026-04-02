@@ -433,7 +433,7 @@ function EnergyBar({ei}){
 
 /* ══ PERSON CARD ════════════════════════════════════════ */
 function PCard({person,onClick}){
-  const sc=calcScore(person),tr=calcTrend(person),dec=getDecision(sc),risk=getRiskLevel(person),vt=getValueType(person),col=sColor(sc),ei=getEnergyImpact(person);
+  const sc=person.defense_log?.slice(-1)[0]?.corrected_score ?? calcScore(person),tr=calcTrend(person),dec=getDecision(sc),risk=getRiskLevel(person),vt=getValueType(person),col=sColor(sc),ei=getEnergyImpact(person);
   return(
     <div className="pcard" onClick={onClick} style={{'--accent':person.color}}>
       <div className="fl fli g12 mb12">
@@ -481,7 +481,7 @@ function Dashboard({people,onSelect,onAdd}){
 /* ══ PROFILE ════════════════════════════════════════════ */
 function Profile({person,onBack,onEdit,onLog,onAskDelete,onUpdatePatterns,onSaveDefense}){
   const[tab,setTab]=useState('overview');
-  const sc=calcScore(person),tr=calcTrend(person),dec=getDecision(sc),risk=getRiskLevel(person),vt=getValueType(person);
+  const sc=person.defense_log?.slice(-1)[0]?.corrected_score ?? calcScore(person),tr=calcTrend(person),dec=getDecision(sc),risk=getRiskLevel(person),vt=getValueType(person);
   const bias=detectBias(person),cons=calcConsistency(person),ei=getEnergyImpact(person);
   const topW=Object.entries(W[person.type]||W.Friendship).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k])=>k);
   const d=person.digital||{};
@@ -622,7 +622,7 @@ Critical rules:
       const data=await res.json();
       const text=data.content.map(i=>i.text||'').join('');
       const r=JSON.parse(text.replace(/```json|```/g,'').trim());
-      setResult(r);setState('done');setSaved(false);
+      setResult(r); setState('done'); if(onSaveDefense)onSaveDefense(r.corrected_score,situation,r); setSaved(true);
     }catch(e){setErr('Analysis failed: '+e.message);setState('error');}
   };
 
